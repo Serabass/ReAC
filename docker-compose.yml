@@ -6,3 +6,14 @@ services:
     working_dir: /work
     volumes:
       - .:/work
+
+  # Static site (nginx): docker compose --profile site up site
+  # http://localhost:8080
+  site:
+    profiles:
+      - site
+    build:
+      context: .
+      dockerfile: Dockerfile.site
+    ports:
+      - "8080:80"

@@ -1,0 +1,24 @@
+# Static KB site: run `reac export-html` then serve with nginx.
+# Build: docker build -f Dockerfile.site -t reac-site .
+# Run:  docker run --rm -p 8080:80 reac-site
+
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+WORKDIR /src
+
+COPY project.toml ./
+COPY src/Reac/Reac.csproj ./src/Reac/
+RUN dotnet restore src/Reac/Reac.csproj
+
+COPY src/ ./src/
+COPY targets/ ./targets/
+COPY modules/ ./modules/
+COPY types/ ./types/
+COPY docs/ ./docs/
+
+RUN dotnet run --project src/Reac/Reac.csproj -c Release -- export-html -p /src
+
+FROM nginx:1.27-alpine
+COPY --from=build /src/generated/html /usr/share/nginx/html
+EXPOSE 80
+
+CMD ["nginx", "-g", "daemon off;"]
