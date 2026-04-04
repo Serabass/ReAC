@@ -1,5 +1,4 @@
 using Reac.Export;
-using Reac.Importers.GtaModsVc;
 using Reac.Ir;
 using Reac.Validate;
 using System.CommandLine;
@@ -10,7 +9,7 @@ internal static class Program
 {
     public static async Task<int> Main(string[] args)
     {
-        var root = new RootCommand("reac — Reverse Engineering as Code (MVP)");
+        var root = new RootCommand("reac — Reverse Engineering as Code");
 
         var init = new Command("init", "Create KB scaffold");
         var initPath = new Argument<DirectoryInfo?>("path", "Directory (default: cwd)");
@@ -31,16 +30,6 @@ internal static class Program
         exportHtml.AddOption(outDir);
         exportHtml.SetHandler(ExportHtmlHandler, projectOpt, outDir);
 
-        var import = new Command("import-gtamods-vc", "Import from GTAMods wiki");
-        import.AddOption(projectOpt);
-        var fixture = new Option<string?>("--fixture", "Local HTML (offline)");
-        var url = new Option<string>("--url", () => "https://gtamods.com/wiki/Memory_Addresses_%28VC%29", "Wiki URL");
-        var force = new Option<bool>("--force", () => false);
-        import.AddOption(fixture);
-        import.AddOption(url);
-        import.AddOption(force);
-        import.SetHandler(ImportHandler, projectOpt, fixture, url, force);
-
         var build = new Command("build", "validate + export-html");
         build.AddOption(projectOpt);
         build.AddOption(outDir);
@@ -49,7 +38,6 @@ internal static class Program
         root.AddCommand(init);
         root.AddCommand(validate);
         root.AddCommand(exportHtml);
-        root.AddCommand(import);
         root.AddCommand(build);
 
         return await root.InvokeAsync(args);
@@ -82,18 +70,6 @@ internal static class Program
         var errors = issues.Count(x => x.IsError);
         if (errors > 0)
             Environment.Exit(1);
-    }
-
-    private static async Task ImportHandler(DirectoryInfo? projectOpt, string? fixture, string url, bool force)
-    {
-        var root = ResolveRoot(projectOpt);
-        await GtaModsImporter.RunAsync(root, new GtaModsImporterOptions
-        {
-            FixturePath = fixture,
-            Url = url,
-            Force = force
-        }, CancellationToken.None);
-        Console.WriteLine("Import finished.");
     }
 
     private static void ExportHtmlHandler(DirectoryInfo? projectOpt, DirectoryInfo? outOpt)

@@ -1,11 +1,11 @@
 document Overview {
   title "Overview"
-  summary "MVP documentation for REaC GTA VC sample. Struct field layouts: Memory_Addresses_(VC). Native function entry points: https://gtamods.com/wiki/Function_Memory_Addresses_(VC)"
+  summary "REaC stores reverse-engineering knowledge as text: types, targets, modules, and documents. This repo includes an illustrative sample KB."
   references {
     ref CEntity
     ref CPed
   }
   section Intro {
-    text "This project stores reverse-engineering knowledge as text files."
+    text "Author types in .re, validate layout, export HTML. No specific game or importer is required."
   }
 }

@@ -1,14 +1,14 @@
 class CPed : CPhysical {
-  module GTA.Core
-  source "https://gtamods.com/wiki/Memory_Addresses_%28VC%29"
-  source "https://gtamods.com/wiki/Function_Memory_Addresses_%28VC%29"
+  module Sample.Core
+  source "https://example.com/reverse/sample-memory"
+  source "https://example.com/reverse/sample-functions"
   fn 0x004FF780 SetAmmo(eWeaponType, uint) : void
   fn 0x004FF840 GrantAmmo(eWeaponType, uint) : void
-  note fn SetAmmo "Sets ammo for a weapon slot (wiki links script opcode 017B)."
+  note fn SetAmmo "Sets ammo for a weapon slot (sample)."
   0x354 health : float
-  note health "Wiki table: current health; script/native SET_CHAR_HEALTH ultimately writes this field."
+  note health "Current health; game scripts or natives may write this field."
   0x358 armor : float
-  note armor "Armor float; related script entry points (e.g. SET_CHAR_ARMOUR) are documented separately on the wiki."
+  note armor "Armor value; document script bindings in your own notes if needed."
   0x3A8 lastVehicle : pointer
   0x408 weapons : CWeapon[10]
   0x508 targetedPed : CPed*

@@ -25,7 +25,7 @@ public static class HtmlExporter
         foreach (var d in project.Documents.OrderBy(x => x.Id))
             indexSb.AppendLine(
                 $"<li><a href=\"doc/{EscapeFile(d.Id)}.html\">{System.Net.WebUtility.HtmlEncode(d.Title)}</a></li>");
-        indexSb.AppendLine("</ul></nav><main><h1>REaC — GTA VC MVP</h1><p>Generated static site.</p></main></body></html>");
+        indexSb.AppendLine("</ul></nav><main><h1>REaC</h1><p>Generated static site (knowledge base export).</p></main></body></html>");
         File.WriteAllText(Path.Combine(outDir, "index.html"), indexSb.ToString(), Encoding.UTF8);
 
         var typeDir = Path.Combine(outDir, "type");

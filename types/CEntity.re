@@ -1,12 +1,12 @@
 class CEntity size 0x64 {
-  module GTA.Core
-  source "https://gtamods.com/wiki/Memory_Addresses_%28VC%29"
-  source "https://gtamods.com/wiki/Function_Memory_Addresses_%28VC%29"
+  module Sample.Core
+  source "https://example.com/reverse/sample-memory"
+  source "https://example.com/reverse/sample-functions"
   fn 0x004898B0 SetModelIndex(uint) : void
-  note fn SetModelIndex "Sets IDE model index; see wiki CEntity section."
+  note fn SetModelIndex "Sets render/collision model index (sample)."
   fn 0x00487D10 GetDistanceFromCentreOfMassToBaseOfModel() : float
   0x000 vtable : pointer
-  note vtable "GTAMods Wiki (CEntity): vtable dispatches virtuals — typical slots include destructor (~CEntity), Remove, Add, Render (names/indices as on the wiki table)."
+  note vtable "Virtual dispatch table; typical slots include destructor, Remove, Add, Render (names depend on your binary)."
   0x004 matrix : CMatrix
   0x044 rwObject : pointer
   0x048 rpAtomic : pointer

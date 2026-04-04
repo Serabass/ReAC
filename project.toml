@@ -1,6 +1,6 @@
-name = "reknow-dda-vc"
+name = "reknow-dda"
 version = "0.1.0"
-active_target = "gta_vc_1_0_win32"
+active_target = "example_win32"
 
 [paths]
 targets_dir = "targets"

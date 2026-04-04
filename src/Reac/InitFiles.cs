@@ -3,9 +3,9 @@ namespace Reac;
 internal static class InitFiles
 {
     internal const string ProjectToml = """
-name = "reknow-dda-vc"
+name = "reknow-dda"
 version = "0.1.0"
-active_target = "gta_vc_1_0_win32"
+active_target = "example_win32"
 
 [paths]
 targets_dir = "targets"
@@ -17,8 +17,8 @@ generated_dir = "generated"
 
     internal static readonly (string Path, string Content)[] AllFiles =
     [
-        ("targets/gta_vc_1_0_win32.re", TargetRe),
-        ("modules/GTA.Core.re", ModuleGta),
+        ("targets/example_win32.re", TargetRe),
+        ("modules/Sample.Core.re", ModuleSample),
         ("modules/RenderWare.Core.re", ModuleRw),
         ("types/CVector.re", CVector),
         ("types/CMatrix.re", CMatrix),
@@ -28,37 +28,37 @@ generated_dir = "generated"
         ("types/CPhysical.re", CPhysical),
         ("types/CPed.re", CPed),
         ("docs/Overview.rdoc", OverviewRdoc),
-        ("docs/GTA_VC_Memory_Model.rdoc", MemoryModelRdoc)
+        ("docs/Sample_Memory_Model.rdoc", MemoryModelRdoc)
     ];
 
     private const string TargetRe = """
-target gta_vc_1_0_win32 {
+target example_win32 {
   pointer_size_bytes 4
-  game "GTA Vice City"
+  game "Sample"
   version "1.0"
   platform "win32"
-  source "https://gtamods.com/wiki/Memory_Addresses_%28VC%29"
-  source "https://gtamods.com/wiki/Function_Memory_Addresses_%28VC%29"
+  source "https://example.com/reverse/sample-memory"
+  source "https://example.com/reverse/sample-functions"
 }
 """;
 
-    private const string ModuleGta = """
-module GTA.Core {
-  summary "GTA Vice City core runtime types (MVP sample)."
+    private const string ModuleSample = """
+module Sample.Core {
+  summary "Illustrative module for REaC samples (game-agnostic tooling; data is only an example)."
 }
 """;
 
     private const string ModuleRw = """
 module RenderWare.Core {
-  summary "RenderWare-related placeholders (MVP)."
+  summary "Third-party engine placeholders (optional; rename or remove in your KB)."
 }
 """;
 
     private const string CVector = """
 struct CVector size 0x0C {
-  module GTA.Core
-  source "https://gtamods.com/wiki/Memory_Addresses_%28VC%29"
-  source "https://gtamods.com/wiki/Function_Memory_Addresses_%28VC%29"
+  module Sample.Core
+  source "https://example.com/reverse/sample-memory"
+  source "https://example.com/reverse/sample-functions"
   0x000 x : float
   0x004 y : float
   0x008 z : float
@@ -67,9 +67,9 @@ struct CVector size 0x0C {
 
     private const string CMatrix = """
 struct CMatrix size 0x40 {
-  module GTA.Core
-  source "https://gtamods.com/wiki/Memory_Addresses_%28VC%29"
-  source "https://gtamods.com/wiki/Function_Memory_Addresses_%28VC%29"
+  module Sample.Core
+  source "https://example.com/reverse/sample-memory"
+  source "https://example.com/reverse/sample-functions"
   0x000 right : CVector
   0x010 up : CVector
   0x020 at : CVector
@@ -79,11 +79,11 @@ struct CMatrix size 0x40 {
 
     private const string CWeapon = """
 struct CWeapon size 0x18 {
-  module GTA.Core
-  source "https://gtamods.com/wiki/Memory_Addresses_%28VC%29"
-  source "https://gtamods.com/wiki/Function_Memory_Addresses_%28VC%29"
-  fn 0x005D45E0 Fire(CEntity*, CVector*) : void // wiki: CWeapon::Fire
-  note fn Fire "Address and signature from Function_Memory_Addresses_(VC); thiscall on CWeapon instance."
+  module Sample.Core
+  source "https://example.com/reverse/sample-memory"
+  source "https://example.com/reverse/sample-functions"
+  fn 0x005D45E0 Fire(CEntity*, CVector*) : void // sample: main fire dispatch
+  note fn Fire "Illustrative native entry; replace address/signature for your build."
   0x000 weaponType : uint32
   0x004 status : uint32
   0x008 clip : uint32
@@ -93,11 +93,11 @@ struct CWeapon size 0x18 {
 
     private const string CWanted = """
 struct CWanted size 0x24 {
-  module GTA.Core
-  source "https://gtamods.com/wiki/Memory_Addresses_%28VC%29"
-  source "https://gtamods.com/wiki/Function_Memory_Addresses_%28VC%29"
+  module Sample.Core
+  source "https://example.com/reverse/sample-memory"
+  source "https://example.com/reverse/sample-functions"
   fn 0x004D1E90 SetMaximumWantedLevel(int) : void
-  note fn SetMaximumWantedLevel "Script-facing cap for max wanted (wiki ties to opcode 01F0)."
+  note fn SetMaximumWantedLevel "Illustrative; tie to your script/runtime docs if applicable."
   0x000 chaos : uint32
   0x01E activity : byte
   0x020 hudLevel : uint32
@@ -106,14 +106,14 @@ struct CWanted size 0x24 {
 
     private const string CEntity = """
 class CEntity size 0x64 {
-  module GTA.Core
-  source "https://gtamods.com/wiki/Memory_Addresses_%28VC%29"
-  source "https://gtamods.com/wiki/Function_Memory_Addresses_%28VC%29"
+  module Sample.Core
+  source "https://example.com/reverse/sample-memory"
+  source "https://example.com/reverse/sample-functions"
   fn 0x004898B0 SetModelIndex(uint) : void
-  note fn SetModelIndex "Sets IDE model index; see wiki CEntity section."
+  note fn SetModelIndex "Sets render/collision model index (sample)."
   fn 0x00487D10 GetDistanceFromCentreOfMassToBaseOfModel() : float
   0x000 vtable : pointer
-  note vtable "GTAMods Wiki (CEntity): vtable dispatches virtuals — typical slots include destructor (~CEntity), Remove, Add, Render (names/indices as on the wiki table)."
+  note vtable "Virtual dispatch table; typical slots include destructor, Remove, Add, Render (names depend on your binary)."
   0x004 matrix : CMatrix
   0x044 rwObject : pointer
   0x048 rpAtomic : pointer
@@ -132,9 +132,9 @@ class CEntity size 0x64 {
 
     private const string CPhysical = """
 class CPhysical : CEntity size 0x120 {
-  module GTA.Core
-  source "https://gtamods.com/wiki/Memory_Addresses_%28VC%29"
-  source "https://gtamods.com/wiki/Function_Memory_Addresses_%28VC%29"
+  module Sample.Core
+  source "https://example.com/reverse/sample-memory"
+  source "https://example.com/reverse/sample-functions"
   fn 0x004B9010 GetHasCollidedWith(CEntity*) : bool
   note fn GetHasCollidedWith "Returns whether this physical is colliding with the given entity."
   0x064 audioEntity : uint32
@@ -157,16 +157,16 @@ class CPhysical : CEntity size 0x120 {
 
     private const string CPed = """
 class CPed : CPhysical {
-  module GTA.Core
-  source "https://gtamods.com/wiki/Memory_Addresses_%28VC%29"
-  source "https://gtamods.com/wiki/Function_Memory_Addresses_%28VC%29"
+  module Sample.Core
+  source "https://example.com/reverse/sample-memory"
+  source "https://example.com/reverse/sample-functions"
   fn 0x004FF780 SetAmmo(eWeaponType, uint) : void
   fn 0x004FF840 GrantAmmo(eWeaponType, uint) : void
-  note fn SetAmmo "Sets ammo for a weapon slot (wiki links script opcode 017B)."
+  note fn SetAmmo "Sets ammo for a weapon slot (sample)."
   0x354 health : float
-  note health "Wiki table: current health; script/native SET_CHAR_HEALTH ultimately writes this field."
+  note health "Current health; game scripts or natives may write this field."
   0x358 armor : float
-  note armor "Armor float; related script entry points (e.g. SET_CHAR_ARMOUR) are documented separately on the wiki."
+  note armor "Armor value; document script bindings in your own notes if needed."
   0x3A8 lastVehicle : pointer
   0x408 weapons : CWeapon[10]
   0x508 targetedPed : CPed*
@@ -177,20 +177,20 @@ class CPed : CPhysical {
     private const string OverviewRdoc = """
 document Overview {
   title "Overview"
-  summary "MVP documentation for REaC GTA VC sample. Struct field layouts: Memory_Addresses_(VC). Native function entry points: https://gtamods.com/wiki/Function_Memory_Addresses_(VC)"
+  summary "REaC stores reverse-engineering knowledge as text: types, targets, modules, and documents. This repo includes an illustrative sample KB."
   references {
     ref CEntity
     ref CPed
   }
   section Intro {
-    text "This project stores reverse-engineering knowledge as text files."
+    text "Author types in .re, validate layout, export HTML. No specific game or importer is required."
   }
 }
 """;
 
     private const string MemoryModelRdoc = """
-document GTA_VC_Memory_Model {
-  title "GTA Vice City memory model overview"
+document Sample_Memory_Model {
+  title "Sample memory model (illustrative)"
   references {
     ref CEntity
     ref CPhysical
@@ -198,15 +198,15 @@ document GTA_VC_Memory_Model {
     ref CVector
     ref CMatrix
   }
-  summary "Imported layout entities align with GTAMods Wiki (Memory_Addresses_(VC)). Function entry points are listed on a separate wiki page — see section Function_addresses_VC."
+  summary "Example .re types showing inheritance, field offsets, and optional native function entry points. Replace sources and names with your binary's provenance."
   section Inheritance {
-    text "CPed extends CPhysical; CPhysical extends CEntity."
+    text "Example chain: CPed extends CPhysical; CPhysical extends CEntity — common in game engines, not mandatory for REaC."
   }
-  section Wiki_functions {
-    text "Two documentation patterns from GTAMods Wiki: (1) Virtual methods on CEntity are reached via the vtable pointer at +0x00 (e.g. Remove, Add — see the CEntity section on Memory_Addresses_(VC)). (2) Script-facing operations such as SET_CHAR_HEALTH / SET_CHAR_ARMOUR correspond to the health and armor floats on CPed in the wiki table, even though the opcode names are not struct fields."
+  section Fields_and_functions {
+    text "Struct fields use hex offsets; native calls are documented separately with fn lines (addresses and signatures are opaque text for your target ABI)."
   }
-  section Function_addresses_VC {
-    text "Canonical list of function addresses (VC exe): https://gtamods.com/wiki/Function_Memory_Addresses_(VC) — classes are ordered by location in memory; each row has Address, Function signature, and Notes where present. Useful examples: 0x004898B0 CEntity::SetModelIndex(uint) — sets the entity model index. 0x00487D10 CEntity::GetDistanceFromCentreOfMassToBaseOfModel(void) — distance helper for placement. 0x004FF780 CPed::SetAmmo(eWeaponType,uint) — sets ped weapon ammo (ties to script opcode 017B per wiki). 0x0050D8E0 CPed::SetPedStats(ePedStats) — applies ped stat preset. 0x004D1E90 CWanted::SetMaximumWantedLevel(int) — caps max wanted level (opcode 01F0). 0x005D45E0 CWeapon::Fire(CEntity*,CVector*) — fires equipped weapon toward a direction. 0x004B9010 CPhysical::GetHasCollidedWith(CEntity*) — returns whether this physical collided with another entity."
+  section Function_entry_points {
+    text "When you document exports or addresses, list them as fn entries on the relevant type. Cross-link external write-ups in source lines or notes."
   }
 }
 """;

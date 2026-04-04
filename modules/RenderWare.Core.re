@@ -1,3 +1,3 @@
 module RenderWare.Core {
-  summary "RenderWare-related placeholders (MVP)."
+  summary "Third-party engine placeholders (optional; rename or remove in your KB)."
 }

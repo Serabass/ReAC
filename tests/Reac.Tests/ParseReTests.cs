@@ -10,7 +10,7 @@ public class ParseReTests
     {
         const string src = """
             class CPed : CPhysical size 0x6D8 {
-              module GTA.Core
+              module Sample.Core
               0x354 health : float
               0x508 targetedPed : CPed*
             }
