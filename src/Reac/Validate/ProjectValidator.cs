@@ -15,9 +15,20 @@ public static class ProjectValidator
     {
         var issues = new List<ValidationIssue>();
         var typeMap = project.Types.ToDictionary(t => t.Name, StringComparer.Ordinal);
+        var bitfieldNames = project.BitfieldTypes.Select(b => b.Name).ToHashSet(StringComparer.Ordinal);
 
         foreach (var g in project.Types.GroupBy(t => t.Name).Where(g => g.Count() > 1))
             issues.Add(new ValidationIssue { IsError = true, Message = $"Duplicate type name: {g.Key}" });
+
+        foreach (var bn in bitfieldNames)
+        {
+            if (typeMap.ContainsKey(bn))
+                issues.Add(new ValidationIssue
+                {
+                    IsError = true,
+                    Message = $"Name '{bn}' is used both as a class/struct type and as a bitfield type"
+                });
+        }
 
         foreach (var t in project.Types)
         {
@@ -78,6 +89,41 @@ public static class ProjectValidator
                         Message = $"Type '{t.Name}': duplicate offset 0x{f.Offset:X} in own fields"
                     });
                 CollectUnresolved(f.Type, t.Name, f.Name, typeMap, issues);
+
+                if (f.FlagBits is { Count: > 0 } flagBits)
+                {
+                    var maxBit = MaxBitIndexForFlagField(f.Type, pointerSizeBytes);
+                    if (maxBit is null)
+                    {
+                        issues.Add(new ValidationIssue
+                        {
+                            IsError = true,
+                            Message =
+                                $"Type '{t.Name}': field '{f.Name}' has FlagBits but resolved scalar type has no fixed size for bit range"
+                        });
+                    }
+                    else
+                    {
+                        var seenBits = new HashSet<int>();
+                        foreach (var fb in flagBits)
+                        {
+                            if (fb.Bit < 0 || fb.Bit > maxBit.Value)
+                                issues.Add(new ValidationIssue
+                                {
+                                    IsError = true,
+                                    Message =
+                                        $"Type '{t.Name}': field '{f.Name}' FlagBits bit {fb.Bit} out of range (0..{maxBit})"
+                                });
+                            if (!seenBits.Add(fb.Bit))
+                                issues.Add(new ValidationIssue
+                                {
+                                    IsError = true,
+                                    Message =
+                                        $"Type '{t.Name}': field '{f.Name}' FlagBits duplicate bit index {fb.Bit}"
+                                });
+                        }
+                    }
+                }
             }
 
             var ownFnAddr = new HashSet<int>();
@@ -135,11 +181,11 @@ public static class ProjectValidator
         {
             foreach (var r in d.References)
             {
-                if (!typeMap.ContainsKey(r))
+                if (!typeMap.ContainsKey(r) && !bitfieldNames.Contains(r))
                     issues.Add(new ValidationIssue
                     {
                         IsError = true,
-                        Message = $"Document '{d.Id}': ref '{r}' not found"
+                        Message = $"Document '{d.Id}': ref '{r}' not found (no type or bitfield with that name)"
                     });
             }
         }
@@ -159,6 +205,14 @@ public static class ProjectValidator
                 return false;
             cur = decl.ParentName;
         }
+    }
+
+    /// <returns>Max valid bit index for the scalar storage, or null if unknown.</returns>
+    private static int? MaxBitIndexForFlagField(TypeExpr type, int pointerSizeBytes)
+    {
+        if (type is not TypeExpr.Scalar s)
+            return null;
+        return FieldSizer.MaxBitIndexForScalarStorage(s.Name, pointerSizeBytes);
     }
 
     private static void CollectUnresolved(TypeExpr expr, string typeName, string fieldName,

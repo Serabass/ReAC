@@ -26,6 +26,8 @@ generated_dir = "generated"
         ("types/CWanted.re", CWanted),
         ("types/CEntity.re", CEntity),
         ("types/CPhysical.re", CPhysical),
+        ("types/CObjectFlags.re", CObjectFlags),
+        ("types/CObject.re", CObject),
         ("types/CPed.re", CPed),
         ("docs/Overview.rdoc", OverviewRdoc),
         ("docs/Sample_Memory_Model.rdoc", MemoryModelRdoc)
@@ -155,6 +157,61 @@ class CPhysical : CEntity size 0x120 {
 }
 """;
 
+    private const string CObjectFlags = """
+bitfield CObjectObjectFlags1 : byte {
+  source "https://gtamods.com/wiki/Memory_Addresses_(VC)#CObject"
+  summary "First object flags byte (VC); names from GTAMods wiki."
+  0 bIsPickupObject
+  1 bDoCircleEffect
+  2 bRenderPickupQuantity
+  3 bRenderPickupAvailability
+  4 bWindowMinorCollisionDamage
+  5 bHasWindowBeenBrokenByMelee
+  6 bHasObjectExplosionTriggered
+  7 bIsVehicleComponent
+}
+
+bitfield CObjectObjectFlags2 : byte {
+  source "https://gtamods.com/wiki/Memory_Addresses_(VC)#CObject"
+  summary "Second object flags byte (VC); names from GTAMods wiki."
+  0 bSpecialLighting
+  1 bNoVehicleCollisionWhenDetached
+}
+
+""";
+
+    private const string CObject = """
+class CObject : CPhysical size 0x1A0 {
+  module Sample.Core
+  source "https://example.com/reverse/sample-memory"
+  source "https://example.com/reverse/sample-functions"
+  note "Layout follows GTAMods Memory_Addresses_(VC) CObject; matDummyInitial is 72 B in that game."
+  0x120 matDummyInitial : byte[72]
+  0x168 fAttachForce : float
+  0x16C byteObjectType : byte
+  0x16D objectFlags1 : CObjectObjectFlags1
+  0x16E objectFlags2 : CObjectObjectFlags2
+  0x16F bytePickupObjectBonusType : byte
+  0x170 wPickupObjectQuantity : uint16
+  0x172 _padding172 : byte[2]
+  0x174 fDamageMultiplier : float
+  0x178 byteCollisionDamageType : byte
+  0x179 byteSpecialCollisionType : byte
+  0x17A byteCameraAvoids : byte
+  0x17B byteBounceScore : byte
+  0x17C _padding17C : byte[4]
+  0x180 dwObjectTimer : uint32
+  0x184 wRefModelId : uint16
+  0x186 _padding186 : byte[2]
+  0x188 pInitialSurface : CEntity*
+  0x18C pContactPhysical : CPhysical*
+  0x190 byteVehicleMainColor : byte
+  0x191 byteVehicleExtraColor : byte
+  0x192 _padding192 : byte[2]
+  0x194 _padTo1A0 : byte[12]
+}
+""";
+
     private const string CPed = """
 class CPed : CPhysical {
   module Sample.Core
@@ -197,13 +254,19 @@ document Sample_Memory_Model {
     ref CPed
     ref CVector
     ref CMatrix
+    ref CObject
+    ref CObjectObjectFlags1
+    ref CObjectObjectFlags2
   }
-  summary "Example .re types showing inheritance, field offsets, and optional native function entry points. Replace sources and names with your binary's provenance."
+  summary "Example .re types showing inheritance, field offsets, optional native function entry points, and bitfield annotations. Replace sources and names with your binary's provenance."
   section Inheritance {
-    text "Example chain: CPed extends CPhysical; CPhysical extends CEntity — common in game engines, not mandatory for REaC."
+    text "Example chain: CPed extends CPhysical; CPhysical extends CEntity; CObject extends CPhysical — illustrative only."
   }
   section Fields_and_functions {
     text "Struct fields use hex offsets; native calls are documented separately with fn lines (addresses and signatures are opaque text for your target ABI)."
+  }
+  section Bitfields {
+    text "Define named flag layouts as top-level bitfield Name : StorageScalar { N bitName; ... } where StorageScalar is any fixed-size scalar (byte, uint16, uint32, uint64, float, double, pointer, …). Bit indices are 0 .. 8*size-1. Optionally use a separate .re file; then use that name as the field type. Examples: CObjectObjectFlags1, CObjectObjectFlags2."
   }
   section Function_entry_points {
     text "When you document exports or addresses, list them as fn entries on the relevant type. Cross-link external write-ups in source lines or notes."

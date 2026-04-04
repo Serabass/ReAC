@@ -33,8 +33,10 @@ public static class ReDocumentParser
                 list.Add(ParseType(text, ref i, TypeKind.Class));
             else if (kw == "struct")
                 list.Add(ParseType(text, ref i, TypeKind.Struct));
+            else if (kw == "bitfield")
+                list.Add(ParseBitfieldTopLevel(text, ref i));
             else
-                throw new ParseException($"Unexpected at {i}: expected target, module, class, struct");
+                throw new ParseException($"Unexpected at {i}: expected target, module, class, struct, bitfield");
         }
 
         return list;
@@ -205,6 +207,95 @@ public static class ReDocumentParser
         return new ReTopLevel.TypeDef(kind, name, parent, declaredSize, lines);
     }
 
+    private static ReTopLevel ParseBitfieldTopLevel(string text, ref int i)
+    {
+        ExpectKeyword(text, ref i, "bitfield");
+        var name = ParseIdent(text, ref i);
+        StringLiterals.SkipNoise(text, ref i);
+        if (i >= text.Length || text[i] != ':')
+            throw new ParseException("bitfield: expected ':' after name");
+        i++;
+        var storage = ParseIdent(text, ref i);
+        var body = ParseBlock(text, ref i);
+        var (bits, sources, summary, note) = ParseBitfieldInnerLines(body);
+        return new ReTopLevel.BitfieldDef(name, storage, bits, sources, summary, note);
+    }
+
+    private static (IReadOnlyList<(int Bit, string Name)> Bits, IReadOnlyList<string> SourceUrls, string? Summary,
+        string? Note) ParseBitfieldInnerLines(string body)
+    {
+        var bits = new List<(int Bit, string Name)>();
+        var sources = new List<string>();
+        string? summary = null, note = null;
+        var seen = new HashSet<int>();
+        var lineStart = 0;
+        while (lineStart < body.Length)
+        {
+            StringLiterals.SkipNoise(body, ref lineStart);
+            if (lineStart >= body.Length)
+                break;
+
+            var lineBegin = lineStart;
+            var lineEnd = lineStart;
+            while (lineEnd < body.Length && body[lineEnd] != '\n' && body[lineEnd] != '\r')
+                lineEnd++;
+            var line = body.Substring(lineBegin, lineEnd - lineBegin).Trim();
+            var ni = lineEnd;
+            if (ni < body.Length && body[ni] == '\r') ni++;
+            if (ni < body.Length && body[ni] == '\n') ni++;
+            lineStart = ni;
+
+            if (string.IsNullOrWhiteSpace(line) || line.StartsWith("//", StringComparison.Ordinal))
+                continue;
+
+            var fw = FirstWord(line);
+            if (fw.Equals("source", StringComparison.OrdinalIgnoreCase))
+            {
+                var r = line.AsSpan(6).Trim();
+                var si = 0;
+                var s = r.ToString();
+                if (!StringLiterals.TryParse(s, ref si, out var url))
+                    throw new ParseException("bitfield source: bad string");
+                sources.Add(url);
+                continue;
+            }
+
+            if (fw.Equals("summary", StringComparison.OrdinalIgnoreCase))
+            {
+                var s = line.Substring(7).Trim();
+                var si = 0;
+                if (!StringLiterals.TryParse(s, ref si, out var sm))
+                    throw new ParseException("bitfield summary: bad string");
+                summary = sm;
+                continue;
+            }
+
+            if (fw.Equals("note", StringComparison.OrdinalIgnoreCase))
+            {
+                var rest = line.Substring(4).Trim();
+                var si = 0;
+                if (!StringLiterals.TryParse(rest, ref si, out var nt))
+                    throw new ParseException("bitfield note: bad string");
+                note = nt;
+                continue;
+            }
+
+            var m = Regex.Match(line, @"^(\d+)\s+([A-Za-z_][A-Za-z0-9_]*)$");
+            if (!m.Success)
+                throw new ParseException($"bitfield: expected source/summary/note or 'N name', got: {line}");
+            var bit = int.Parse(m.Groups[1].Value, CultureInfo.InvariantCulture);
+            var bitName = m.Groups[2].Value;
+            if (!seen.Add(bit))
+                throw new ParseException($"bitfield: duplicate bit index {bit}");
+            bits.Add((bit, bitName));
+        }
+
+        if (bits.Count == 0)
+            throw new ParseException("bitfield: at least one bit line required");
+
+        return (bits, sources, summary, note);
+    }
+
     private static string ParseBlock(string text, ref int i)
     {
         StringLiterals.SkipNoise(text, ref i);
@@ -239,17 +330,22 @@ public static class ReDocumentParser
             if (lineStart >= body.Length)
                 break;
 
+            var lineBegin = lineStart;
             var lineEnd = lineStart;
             while (lineEnd < body.Length && body[lineEnd] != '\n' && body[lineEnd] != '\r')
                 lineEnd++;
-            var line = body.Substring(lineStart, lineEnd - lineStart).Trim();
+            var line = body.Substring(lineBegin, lineEnd - lineBegin).Trim();
             var ni = lineEnd;
             if (ni < body.Length && body[ni] == '\r') ni++;
             if (ni < body.Length && body[ni] == '\n') ni++;
-            lineStart = ni;
 
             if (string.IsNullOrWhiteSpace(line) || line.StartsWith("//", StringComparison.Ordinal))
+            {
+                lineStart = ni;
                 continue;
+            }
+
+            lineStart = ni;
 
             try
             {

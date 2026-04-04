@@ -29,6 +29,16 @@ public class HtmlExportSmokeTests
             Assert.Contains("Ancestor types", pedHtml, StringComparison.Ordinal);
             Assert.Contains("details", pedHtml, StringComparison.OrdinalIgnoreCase);
             Assert.Contains("CPhysical", pedHtml, StringComparison.Ordinal);
+
+            var cobj = Path.Combine(outDir, "type", "CObject.html");
+            Assert.True(File.Exists(cobj));
+            var cobjHtml = File.ReadAllText(cobj);
+            Assert.Contains("CObjectObjectFlags1", cobjHtml, StringComparison.Ordinal);
+            Assert.Contains("../bitfield/CObjectObjectFlags1.html", cobjHtml, StringComparison.Ordinal);
+
+            var bf1 = Path.Combine(outDir, "bitfield", "CObjectObjectFlags1.html");
+            Assert.True(File.Exists(bf1));
+            Assert.Contains("bIsPickupObject", File.ReadAllText(bf1), StringComparison.Ordinal);
         }
         finally
         {

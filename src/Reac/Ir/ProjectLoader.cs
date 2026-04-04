@@ -18,29 +18,77 @@ public static class ProjectLoader
         var typesDir = Path.Combine(projectRoot, cfg.TypesDir);
         var docsDir = Path.Combine(projectRoot, cfg.DocsDir);
 
+        var parsedFiles = new List<(string Path, IReadOnlyList<ReTopLevel> Tops)>();
+        foreach (var f in EnumerateReFilesSorted(targetsDir))
+            parsedFiles.Add((f, ReDocumentParser.ParseDocument(File.ReadAllText(f))));
+        foreach (var f in EnumerateReFilesSorted(modulesDir))
+            parsedFiles.Add((f, ReDocumentParser.ParseDocument(File.ReadAllText(f))));
+        foreach (var f in EnumerateReFilesSorted(typesDir))
+            parsedFiles.Add((f, ReDocumentParser.ParseDocument(File.ReadAllText(f))));
+
         var targets = new List<TargetDecl>();
-        var modules = new List<ModuleDecl>();
-        var types = new List<TypeDecl>();
-        var documents = new List<DocumentDecl>();
-
-        foreach (var f in EnumerateReFiles(targetsDir))
-            Merge(targets, modules, types, f);
-        foreach (var f in EnumerateReFiles(modulesDir))
-            Merge(targets, modules, types, f);
-        foreach (var f in EnumerateReFiles(typesDir))
-            Merge(targets, modules, types, f);
-
-        foreach (var f in Directory.Exists(docsDir) ? Directory.EnumerateFiles(docsDir, "*.rdoc") : Array.Empty<string>())
+        foreach (var (path, tops) in parsedFiles)
         {
-            var text = File.ReadAllText(f);
-            var doc = RdocDocumentParser.ParseDocument(text, f);
-            documents.Add(doc);
+            foreach (var t in tops)
+            {
+                if (t is ReTopLevel.Target tg)
+                    targets.Add(ToTarget(tg, path));
+            }
         }
 
-        var pointerSize = targets.FirstOrDefault(x =>
+        var pointerSizeForBitfields = targets.FirstOrDefault(x =>
                 string.Equals(x.Id, cfg.ActiveTarget, StringComparison.OrdinalIgnoreCase))
             ?.PointerSizeBytes ?? 4;
+
+        var bitfieldMap = new Dictionary<string, BitfieldTypeDecl>(StringComparer.Ordinal);
+        foreach (var (path, tops) in parsedFiles)
+        {
+            foreach (var t in tops)
+            {
+                if (t is not ReTopLevel.BitfieldDef bf)
+                    continue;
+                var decl = ToBitfieldDecl(bf, path, pointerSizeForBitfields);
+                if (!bitfieldMap.TryAdd(decl.Name, decl))
+                    throw new InvalidOperationException(
+                        $"Duplicate bitfield type '{decl.Name}' (see {path} and existing)");
+            }
+        }
+
+        var modules = new List<ModuleDecl>();
+        var types = new List<TypeDecl>();
+        foreach (var (path, tops) in parsedFiles)
+        {
+            foreach (var t in tops)
+            {
+                switch (t)
+                {
+                    case ReTopLevel.Target:
+                        break;
+                    case ReTopLevel.Module m:
+                        modules.Add(ToModule(m, path));
+                        break;
+                    case ReTopLevel.TypeDef td:
+                        types.Add(ToType(td, path, bitfieldMap));
+                        break;
+                    case ReTopLevel.BitfieldDef:
+                        break;
+                }
+            }
+        }
+
+        var documents = new List<DocumentDecl>();
+        foreach (var f in Directory.Exists(docsDir)
+                     ? Directory.EnumerateFiles(docsDir, "*.rdoc").OrderBy(x => x, StringComparer.OrdinalIgnoreCase).ToArray()
+                     : Array.Empty<string>())
+        {
+            var text = File.ReadAllText(f);
+            documents.Add(RdocDocumentParser.ParseDocument(text, f));
+        }
+
+        var pointerSize = pointerSizeForBitfields;
         var typesWithSizes = TypeSizeInference.Apply(types, pointerSize);
+
+        var bitfieldList = bitfieldMap.Values.OrderBy(b => b.Name, StringComparer.OrdinalIgnoreCase).ToList();
 
         return new ProjectIr
         {
@@ -49,37 +97,47 @@ public static class ProjectLoader
             Targets = targets,
             Modules = modules,
             Types = typesWithSizes,
+            BitfieldTypes = bitfieldList,
             Documents = documents
         };
     }
 
-    private static IEnumerable<string> EnumerateReFiles(string dir)
+    private static IEnumerable<string> EnumerateReFilesSorted(string dir)
     {
         if (!Directory.Exists(dir))
             yield break;
-        foreach (var f in Directory.EnumerateFiles(dir, "*.re", SearchOption.AllDirectories))
+        foreach (var f in Directory.EnumerateFiles(dir, "*.re", SearchOption.AllDirectories)
+                     .OrderBy(x => x, StringComparer.OrdinalIgnoreCase))
             yield return f;
     }
 
-    private static void Merge(List<TargetDecl> targets, List<ModuleDecl> modules, List<TypeDecl> types, string file)
+    private static BitfieldTypeDecl ToBitfieldDecl(ReTopLevel.BitfieldDef d, string file, int pointerSizeBytes)
     {
-        var text = File.ReadAllText(file);
-        var tops = ReDocumentParser.ParseDocument(text);
-        foreach (var t in tops)
+        var maxBit = FieldSizer.MaxBitIndexForScalarStorage(d.StorageName, pointerSizeBytes);
+        if (maxBit is null)
+            throw new InvalidOperationException(
+                $"bitfield '{d.Name}': unsupported storage '{d.StorageName}' (use a fixed-size scalar: byte..uint64, float, double, pointer, etc.)");
+
+        var seenBits = new HashSet<int>();
+        foreach (var (bit, _) in d.Bits)
         {
-            switch (t)
-            {
-                case ReTopLevel.Target tg:
-                    targets.Add(ToTarget(tg, file));
-                    break;
-                case ReTopLevel.Module m:
-                    modules.Add(ToModule(m, file));
-                    break;
-                case ReTopLevel.TypeDef td:
-                    types.Add(ToType(td, file));
-                    break;
-            }
+            if (bit < 0 || bit > maxBit.Value)
+                throw new InvalidOperationException(
+                    $"bitfield '{d.Name}': bit index {bit} out of range for storage '{d.StorageName}'");
+            if (!seenBits.Add(bit))
+                throw new InvalidOperationException($"bitfield '{d.Name}': duplicate bit index {bit}");
         }
+
+        return new BitfieldTypeDecl
+        {
+            Name = d.Name,
+            StorageName = d.StorageName,
+            Bits = d.Bits.Select(b => new FlagBitDecl { Bit = b.Bit, Name = b.Name }).ToList(),
+            SourceUrls = d.SourceUrls.ToList(),
+            Summary = d.Summary,
+            Note = d.Note,
+            FilePath = file
+        };
     }
 
     private static TargetDecl ToTarget(ReTopLevel.Target t, string file) =>
@@ -103,7 +161,8 @@ public static class ProjectLoader
             FilePath = file
         };
 
-    private static TypeDecl ToType(ReTopLevel.TypeDef td, string file)
+    private static TypeDecl ToType(ReTopLevel.TypeDef td, string file,
+        IReadOnlyDictionary<string, BitfieldTypeDecl> bitfieldMap)
     {
         var fieldNotes = new Dictionary<string, string>(StringComparer.Ordinal);
         var functionNotes = new Dictionary<string, string>(StringComparer.Ordinal);
@@ -118,18 +177,30 @@ public static class ProjectLoader
         var fields = new List<FieldDecl>();
         foreach (var line in td.Body)
         {
-            if (line is ReBodyLine.FieldLine fl)
+            if (line is not ReBodyLine.FieldLine fl)
+                continue;
+
+            var mergedNote = fl.Note ?? (fieldNotes.TryGetValue(fl.Name, out var nt) ? nt : null);
+            TypeExpr resolvedType = fl.Type;
+            IReadOnlyList<FlagBitDecl>? flagBits = null;
+            string? bitfieldTypeName = null;
+            if (fl.Type is TypeExpr.Named nn && bitfieldMap.TryGetValue(nn.Name, out var bfDecl))
             {
-                var mergedNote = fl.Note ?? (fieldNotes.TryGetValue(fl.Name, out var nt) ? nt : null);
-                fields.Add(new FieldDecl
-                {
-                    Offset = fl.Offset,
-                    Name = fl.Name,
-                    Type = fl.Type,
-                    Note = mergedNote,
-                    Provenance = null
-                });
+                resolvedType = new TypeExpr.Scalar(CanonicalScalarForBitfieldStorage(bfDecl.StorageName));
+                flagBits = bfDecl.Bits;
+                bitfieldTypeName = nn.Name;
             }
+
+            fields.Add(new FieldDecl
+            {
+                Offset = fl.Offset,
+                Name = fl.Name,
+                Type = resolvedType,
+                Note = mergedNote,
+                Provenance = null,
+                FlagBits = flagBits,
+                BitfieldTypeName = bitfieldTypeName
+            });
         }
 
         var functions = new List<FunctionDecl>();
@@ -177,5 +248,15 @@ public static class ProjectLoader
             OwnFunctions = functions,
             FilePath = file
         };
+    }
+
+    private static string CanonicalScalarForBitfieldStorage(string storageName)
+    {
+        var n = storageName.ToLowerInvariant();
+        if (n is "uint8" or "bool" or "char")
+            return "byte";
+        if (n is "word")
+            return "uint16";
+        return storageName;
     }
 }

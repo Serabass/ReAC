@@ -21,6 +21,15 @@ public abstract record ReTopLevel
         string? Parent,
         int? DeclaredSize,
         IReadOnlyList<ReBodyLine> Body) : ReTopLevel;
+
+    /// <summary>Named flag layout; storage is any fixed-size scalar (bit count = 8 * scalar size). Use as field type, e.g. <c>0x10 flags : MyFlags</c>.</summary>
+    public sealed record BitfieldDef(
+        string Name,
+        string StorageName,
+        IReadOnlyList<(int Bit, string Name)> Bits,
+        IReadOnlyList<string> SourceUrls,
+        string? Summary,
+        string? Note) : ReTopLevel;
 }
 
 public abstract record ReBodyLine

@@ -29,7 +29,14 @@ public class TypeSizeInferenceTests
             Size = 0,
             OwnFields =
             [
-                new FieldDecl { Offset = 20, Name = "z", Type = new TypeExpr.Scalar("uint32") }
+                new FieldDecl
+                {
+                    Offset = 20,
+                    Name = "z",
+                    Type = new TypeExpr.Scalar("uint32"),
+                    FlagBits = null,
+                    BitfieldTypeName = null
+                }
             ],
             OwnFunctions = Array.Empty<FunctionDecl>(),
             SourceUrls = Array.Empty<string>(),

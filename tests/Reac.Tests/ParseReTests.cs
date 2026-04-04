@@ -50,6 +50,31 @@ public class ParseReTests
     }
 
     [Fact]
+    public void Parse_bitfield_top_level_and_field_reference()
+    {
+        const string src = """
+            bitfield MyFlags : byte {
+              0 a
+              1 b
+            }
+            struct T size 0x10 {
+              module M
+              0x0 flags : MyFlags
+            }
+            """;
+        var doc = ReDocumentParser.ParseDocument(src);
+        Assert.Equal(2, doc.Count);
+        var bf = Assert.IsType<ReTopLevel.BitfieldDef>(doc[0]);
+        Assert.Equal("MyFlags", bf.Name);
+        Assert.Equal("byte", bf.StorageName);
+        Assert.Equal(new[] { (0, "a"), (1, "b") }, bf.Bits);
+        var td = Assert.IsType<ReTopLevel.TypeDef>(doc[1]);
+        var fl = Assert.Single(td.Body.OfType<ReBodyLine.FieldLine>());
+        Assert.IsType<TypeExpr.Named>(fl.Type);
+        Assert.Equal("MyFlags", ((TypeExpr.Named)fl.Type).Name);
+    }
+
+    [Fact]
     public void ParseType_preserves_multiple_source_lines_order()
     {
         const string src = """

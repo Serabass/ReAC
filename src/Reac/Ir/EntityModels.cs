@@ -6,6 +6,12 @@ public enum TypeKind
     Struct
 }
 
+public sealed class FlagBitDecl
+{
+    public required int Bit { get; init; }
+    public required string Name { get; init; }
+}
+
 public sealed class FieldDecl
 {
     public required int Offset { get; init; }
@@ -13,6 +19,23 @@ public sealed class FieldDecl
     public required TypeExpr Type { get; init; }
     public string? Note { get; init; }
     public Provenance? Provenance { get; init; }
+    /// <summary>Optional bit names for a scalar flag word (e.g. byte).</summary>
+    public IReadOnlyList<FlagBitDecl>? FlagBits { get; init; }
+    /// <summary>When field type was a named <c>bitfield</c> definition, its name (for docs).</summary>
+    public string? BitfieldTypeName { get; init; }
+}
+
+/// <summary>Top-level named bit layout (storage is one scalar).</summary>
+public sealed class BitfieldTypeDecl
+{
+    public required string Name { get; init; }
+    /// <summary>Underlying scalar name, e.g. byte or uint16.</summary>
+    public required string StorageName { get; init; }
+    public required IReadOnlyList<FlagBitDecl> Bits { get; init; }
+    public required IReadOnlyList<string> SourceUrls { get; init; }
+    public string? Summary { get; init; }
+    public string? Note { get; init; }
+    public required string FilePath { get; init; }
 }
 
 /// <summary>Native function entry point associated with a type (thiscall/free function address from game exe).</summary>
@@ -87,6 +110,7 @@ public sealed class ProjectIr
     public required IReadOnlyList<TargetDecl> Targets { get; init; }
     public required IReadOnlyList<ModuleDecl> Modules { get; init; }
     public required IReadOnlyList<TypeDecl> Types { get; init; }
+    public required IReadOnlyList<BitfieldTypeDecl> BitfieldTypes { get; init; }
     public required IReadOnlyList<DocumentDecl> Documents { get; init; }
 }
 

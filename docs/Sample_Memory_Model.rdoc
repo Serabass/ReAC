@@ -6,15 +6,21 @@ document Sample_Memory_Model {
     ref CPed
     ref CVector
     ref CMatrix
+    ref CObject
+    ref CObjectObjectFlags1
+    ref CObjectObjectFlags2
   }
-  summary "Example .re types showing inheritance, field offsets, and optional native function entry points. Replace sources and names with your binary’s provenance."
+  summary "Example .re types showing inheritance, field offsets, optional native function entry points, and bitfield annotations. Replace sources and names with your binary's provenance."
   section Inheritance {
-    text "Example chain: CPed extends CPhysical; CPhysical extends CEntity — common in game engines, not mandatory for REaC."
+    text "Example chain: CPed extends CPhysical; CPhysical extends CEntity; CObject extends CPhysical — illustrative only."
   }
   section Fields_and_functions {
     text "Struct fields use hex offsets; native calls are documented separately with fn lines (addresses and signatures are opaque text for your target ABI)."
   }
   section Function_entry_points {
     text "When you document exports or addresses, list them as fn entries on the relevant type. Cross-link external write-ups in source lines or notes."
+  }
+  section Bitfields {
+    text "Define named flag layouts as top-level bitfield Name : StorageScalar { N bitName; ... } where StorageScalar is any fixed-size scalar (byte, uint16, uint32, uint64, float, double, pointer, …). Bit indices are 0 .. 8*size-1. Optionally use a separate .re file; then use that name as the field type. Examples: CObjectObjectFlags1, CObjectObjectFlags2."
   }
 }

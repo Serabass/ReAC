@@ -10,6 +10,8 @@ public sealed class FlattenedField
     public required string DeclaringTypeName { get; init; }
     public bool Indeterminate { get; init; }
     public string? Note { get; init; }
+    public IReadOnlyList<FlagBitDecl>? FlagBits { get; init; }
+    public string? BitfieldTypeName { get; init; }
 }
 
 public sealed class TypeLayout
@@ -62,7 +64,9 @@ public static class LayoutEngine
                     Type = f.Type,
                     DeclaringTypeName = name,
                     Indeterminate = indet,
-                    Note = f.Note
+                    Note = f.Note,
+                    FlagBits = f.FlagBits,
+                    BitfieldTypeName = f.BitfieldTypeName
                 });
             }
         }
@@ -151,5 +155,12 @@ public static class FieldSizer
             "double" => 8,
             _ => null
         };
+    }
+
+    /// <summary>Max bit index (0-based) for a scalar of this name, or null if unknown or zero-sized.</summary>
+    public static int? MaxBitIndexForScalarStorage(string scalarName, int pointerSizeBytes)
+    {
+        var sz = SizeOfScalar(scalarName, pointerSizeBytes);
+        return sz is > 0 ? sz.Value * 8 - 1 : null;
     }
 }
