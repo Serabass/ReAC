@@ -1,0 +1,25 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+      - name: Restore and build
+        run: dotnet build
+      - name: Test (offline, no network for importers)
+        run: dotnet test --no-build
+      - name: Validate KB
+        run: dotnet run --project src/Reac -- validate
+      - name: Export HTML
+        run: dotnet run --project src/Reac -- export-html --out generated/html-ci
+      - name: Smoke check
+        run: test -f generated/html-ci/index.html && grep -q CEntity generated/html-ci/index.html

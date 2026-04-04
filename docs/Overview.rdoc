@@ -1,0 +1,11 @@
+document Overview {
+  title "Overview"
+  summary "MVP documentation for REaC GTA VC sample."
+  references {
+    ref CEntity
+    ref CPed
+  }
+  section Intro {
+    text "This project stores reverse-engineering knowledge as text files."
+  }
+}

@@ -1,0 +1,17 @@
+document GTA_VC_Memory_Model {
+  title "GTA Vice City memory model overview"
+  references {
+    ref CEntity
+    ref CPhysical
+    ref CPed
+    ref CVector
+    ref CMatrix
+  }
+  summary "Imported layout entities align with GTAMods Wiki tables."
+  section Inheritance {
+    text "CPed extends CPhysical; CPhysical extends CEntity."
+  }
+  section Wiki_functions {
+    text "Two documentation patterns from GTAMods Wiki: (1) Virtual methods on CEntity are reached via the vtable pointer at +0x00 (e.g. Remove, Add — see the CEntity section on Memory_Addresses_(VC)). (2) Script-facing operations such as SET_CHAR_HEALTH / SET_CHAR_ARMOUR correspond to the health and armor floats on CPed in the wiki table, even though the opcode names are not struct fields."
+  }
+}

@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<body>
+<h2><span class="mw-headline" id="CVector">CVector</span></h2>
+<table class="wikitable">
+<tr><th>Offset</th><th>Type</th><th>Description</th></tr>
+<tr><td>0x000</td><td>float</td><td>x</td></tr>
+<tr><td>0x004</td><td>float</td><td>y</td></tr>
+</table>
+<h2><span class="mw-headline" id="CMatrix">CMatrix</span></h2>
+<table class="wikitable">
+<tr><th>Offset</th><th>Type</th></tr>
+<tr><td>0x000</td><td>CVector</td><td>right</td></tr>
+</table>
+<h2><span class="mw-headline" id="CEntity">CEntity</span></h2>
+<table class="wikitable">
+<tr><th>Offset</th><th>Type</th></tr>
+<tr><td>0x000</td><td>pointer</td><td>vtable</td></tr>
+</table>
+<h2><span class="mw-headline" id="CPhysical">CPhysical</span></h2>
+<table class="wikitable">
+<tr><th>Offset</th><th>Type</th></tr>
+<tr><td>0x064</td><td>dword</td><td>audio</td></tr>
+</table>
+<h2><span class="mw-headline" id="CPed">CPed</span></h2>
+<table class="wikitable">
+<tr><th>Offset</th><th>Type</th></tr>
+<tr><td>0x354</td><td>float</td><td>health</td></tr>
+</table>
+</body>
+</html>
