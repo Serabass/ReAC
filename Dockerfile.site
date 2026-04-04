@@ -17,6 +17,8 @@ COPY docs/ ./docs/
 
 RUN dotnet run --project src/Reac/Reac.csproj -c Release -- export-html -p /src
 
+########################################################################################
+
 FROM nginx:1.27-alpine
 COPY --from=build /src/generated/html /usr/share/nginx/html
 EXPOSE 80

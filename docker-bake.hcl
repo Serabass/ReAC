@@ -6,13 +6,15 @@ group "default" {
 }
 
 variable "CI_REGISTRY_IMAGE" {
-  default = "reg.home.local/vibecoding/reac-vc"
+  default = "reg.serabass.kz/vibecoding/reac-vc"
 }
 
 target "site" {
   context    = "."
   dockerfile = "Dockerfile.site"
-  tags       = ["${IMAGE_NAME}:${IMAGE_TAG}"]
+  tags       = ["${CI_REGISTRY_IMAGE}:latest"]
+  pull       = true
+  push       = true
   labels = {
     "org.opencontainers.image.title"       = "REaC static knowledge base"
     "org.opencontainers.image.description" = "HTML export from reac export-html, served by nginx"
