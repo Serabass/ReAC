@@ -15,6 +15,17 @@ public sealed class FieldDecl
     public Provenance? Provenance { get; init; }
 }
 
+/// <summary>Native function entry point associated with a type (thiscall/free function address from game exe).</summary>
+public sealed class FunctionDecl
+{
+    public required int Address { get; init; }
+    public required string Name { get; init; }
+    public required string Parameters { get; init; }
+    public string? ReturnType { get; init; }
+    public string? Note { get; init; }
+    public Provenance? Provenance { get; init; }
+}
+
 public sealed class TypeDecl
 {
     public required string Name { get; init; }
@@ -30,6 +41,7 @@ public sealed class TypeDecl
     public string? Note { get; init; }
     public Provenance? Provenance { get; init; }
     public required IReadOnlyList<FieldDecl> OwnFields { get; init; }
+    public required IReadOnlyList<FunctionDecl> OwnFunctions { get; init; }
     public required string FilePath { get; init; }
 }
 

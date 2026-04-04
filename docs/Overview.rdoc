@@ -1,6 +1,6 @@
 document Overview {
   title "Overview"
-  summary "MVP documentation for REaC GTA VC sample."
+  summary "MVP documentation for REaC GTA VC sample. Struct field layouts: Memory_Addresses_(VC). Native function entry points: https://gtamods.com/wiki/Function_Memory_Addresses_(VC)"
   references {
     ref CEntity
     ref CPed

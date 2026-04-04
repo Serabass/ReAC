@@ -7,11 +7,14 @@ document GTA_VC_Memory_Model {
     ref CVector
     ref CMatrix
   }
-  summary "Imported layout entities align with GTAMods Wiki tables."
+  summary "Imported layout entities align with GTAMods Wiki (Memory_Addresses_(VC)). Function entry points are listed on a separate wiki page — see section Function_addresses_VC."
   section Inheritance {
     text "CPed extends CPhysical; CPhysical extends CEntity."
   }
   section Wiki_functions {
     text "Two documentation patterns from GTAMods Wiki: (1) Virtual methods on CEntity are reached via the vtable pointer at +0x00 (e.g. Remove, Add — see the CEntity section on Memory_Addresses_(VC)). (2) Script-facing operations such as SET_CHAR_HEALTH / SET_CHAR_ARMOUR correspond to the health and armor floats on CPed in the wiki table, even though the opcode names are not struct fields."
+  }
+  section Function_addresses_VC {
+    text "Canonical list of function addresses (VC exe): https://gtamods.com/wiki/Function_Memory_Addresses_(VC) — classes are ordered by location in memory; each row has Address, Function signature, and Notes where present. Useful examples: 0x004898B0 CEntity::SetModelIndex(uint) — sets the entity model index. 0x00487D10 CEntity::GetDistanceFromCentreOfMassToBaseOfModel(void) — distance helper for placement. 0x004FF780 CPed::SetAmmo(eWeaponType,uint) — sets ped weapon ammo (ties to script opcode 017B per wiki). 0x0050D8E0 CPed::SetPedStats(ePedStats) — applies ped stat preset. 0x004D1E90 CWanted::SetMaximumWantedLevel(int) — caps max wanted level (opcode 01F0). 0x005D45E0 CWeapon::Fire(CEntity*,CVector*) — fires equipped weapon toward a direction. 0x004B9010 CPhysical::GetHasCollidedWith(CEntity*) — returns whether this physical collided with another entity."
   }
 }

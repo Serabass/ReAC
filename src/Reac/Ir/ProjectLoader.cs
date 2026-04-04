@@ -106,10 +106,13 @@ public static class ProjectLoader
     private static TypeDecl ToType(ReTopLevel.TypeDef td, string file)
     {
         var fieldNotes = new Dictionary<string, string>(StringComparer.Ordinal);
+        var functionNotes = new Dictionary<string, string>(StringComparer.Ordinal);
         foreach (var line in td.Body)
         {
             if (line is ReBodyLine.NoteFieldLine nf)
                 fieldNotes[nf.FieldName] = nf.Text;
+            if (line is ReBodyLine.NoteFunctionLine nfn)
+                functionNotes[nfn.FunctionName] = nfn.Text;
         }
 
         var fields = new List<FieldDecl>();
@@ -124,6 +127,24 @@ public static class ProjectLoader
                     Name = fl.Name,
                     Type = fl.Type,
                     Note = mergedNote,
+                    Provenance = null
+                });
+            }
+        }
+
+        var functions = new List<FunctionDecl>();
+        foreach (var line in td.Body)
+        {
+            if (line is ReBodyLine.FunctionLine fn)
+            {
+                var mergedFnNote = fn.Note ?? (functionNotes.TryGetValue(fn.Name, out var n) ? n : null);
+                functions.Add(new FunctionDecl
+                {
+                    Address = fn.Address,
+                    Name = fn.Name,
+                    Parameters = fn.Parameters,
+                    ReturnType = fn.ReturnType,
+                    Note = mergedFnNote,
                     Provenance = null
                 });
             }
@@ -151,6 +172,7 @@ public static class ProjectLoader
             Note = note,
             Provenance = null,
             OwnFields = fields,
+            OwnFunctions = functions,
             FilePath = file
         };
     }

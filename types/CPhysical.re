@@ -1,6 +1,8 @@
 class CPhysical : CEntity size 0x120 {
   module GTA.Core
   source "https://gtamods.com/wiki/Memory_Addresses_%28VC%29"
+  fn 0x004B9010 GetHasCollidedWith(CEntity*) : bool
+  note fn GetHasCollidedWith "Returns whether this physical is colliding with the given entity."
   0x064 audioEntity : uint32
   0x06C lastCollisionTime : uint32
   0x070 moveSpeed : CVector

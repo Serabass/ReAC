@@ -78,6 +78,8 @@ struct CMatrix size 0x40 {
 struct CWeapon size 0x18 {
   module GTA.Core
   source "https://gtamods.com/wiki/Memory_Addresses_%28VC%29"
+  fn 0x005D45E0 Fire(CEntity*, CVector*) : void // wiki: CWeapon::Fire
+  note fn Fire "Address and signature from Function_Memory_Addresses_(VC); thiscall on CWeapon instance."
   0x000 weaponType : uint32
   0x004 status : uint32
   0x008 clip : uint32
@@ -89,6 +91,8 @@ struct CWeapon size 0x18 {
 struct CWanted size 0x24 {
   module GTA.Core
   source "https://gtamods.com/wiki/Memory_Addresses_%28VC%29"
+  fn 0x004D1E90 SetMaximumWantedLevel(int) : void
+  note fn SetMaximumWantedLevel "Script-facing cap for max wanted (wiki ties to opcode 01F0)."
   0x000 chaos : uint32
   0x01E activity : byte
   0x020 hudLevel : uint32
@@ -99,6 +103,9 @@ struct CWanted size 0x24 {
 class CEntity size 0x64 {
   module GTA.Core
   source "https://gtamods.com/wiki/Memory_Addresses_%28VC%29"
+  fn 0x004898B0 SetModelIndex(uint) : void
+  note fn SetModelIndex "Sets IDE model index; see wiki CEntity section."
+  fn 0x00487D10 GetDistanceFromCentreOfMassToBaseOfModel() : float
   0x000 vtable : pointer
   note vtable "GTAMods Wiki (CEntity): vtable dispatches virtuals — typical slots include destructor (~CEntity), Remove, Add, Render (names/indices as on the wiki table)."
   0x004 matrix : CMatrix
@@ -121,6 +128,8 @@ class CEntity size 0x64 {
 class CPhysical : CEntity size 0x120 {
   module GTA.Core
   source "https://gtamods.com/wiki/Memory_Addresses_%28VC%29"
+  fn 0x004B9010 GetHasCollidedWith(CEntity*) : bool
+  note fn GetHasCollidedWith "Returns whether this physical is colliding with the given entity."
   0x064 audioEntity : uint32
   0x06C lastCollisionTime : uint32
   0x070 moveSpeed : CVector
@@ -143,6 +152,9 @@ class CPhysical : CEntity size 0x120 {
 class CPed : CPhysical {
   module GTA.Core
   source "https://gtamods.com/wiki/Memory_Addresses_%28VC%29"
+  fn 0x004FF780 SetAmmo(eWeaponType, uint) : void
+  fn 0x004FF840 GrantAmmo(eWeaponType, uint) : void
+  note fn SetAmmo "Sets ammo for a weapon slot (wiki links script opcode 017B)."
   0x354 health : float
   note health "Wiki table: current health; script/native SET_CHAR_HEALTH ultimately writes this field."
   0x358 armor : float
@@ -157,7 +169,7 @@ class CPed : CPhysical {
     private const string OverviewRdoc = """
 document Overview {
   title "Overview"
-  summary "MVP documentation for REaC GTA VC sample."
+  summary "MVP documentation for REaC GTA VC sample. Struct field layouts: Memory_Addresses_(VC). Native function entry points: https://gtamods.com/wiki/Function_Memory_Addresses_(VC)"
   references {
     ref CEntity
     ref CPed
@@ -178,12 +190,15 @@ document GTA_VC_Memory_Model {
     ref CVector
     ref CMatrix
   }
-  summary "Imported layout entities align with GTAMods Wiki tables."
+  summary "Imported layout entities align with GTAMods Wiki (Memory_Addresses_(VC)). Function entry points are listed on a separate wiki page — see section Function_addresses_VC."
   section Inheritance {
     text "CPed extends CPhysical; CPhysical extends CEntity."
   }
   section Wiki_functions {
     text "Two documentation patterns from GTAMods Wiki: (1) Virtual methods on CEntity are reached via the vtable pointer at +0x00 (e.g. Remove, Add — see the CEntity section on Memory_Addresses_(VC)). (2) Script-facing operations such as SET_CHAR_HEALTH / SET_CHAR_ARMOUR correspond to the health and armor floats on CPed in the wiki table, even though the opcode names are not struct fields."
+  }
+  section Function_addresses_VC {
+    text "Canonical list of function addresses (VC exe): https://gtamods.com/wiki/Function_Memory_Addresses_(VC) — classes are ordered by location in memory; each row has Address, Function signature, and Notes where present. Useful examples: 0x004898B0 CEntity::SetModelIndex(uint) — sets the entity model index. 0x00487D10 CEntity::GetDistanceFromCentreOfMassToBaseOfModel(void) — distance helper for placement. 0x004FF780 CPed::SetAmmo(eWeaponType,uint) — sets ped weapon ammo (ties to script opcode 017B per wiki). 0x0050D8E0 CPed::SetPedStats(ePedStats) — applies ped stat preset. 0x004D1E90 CWanted::SetMaximumWantedLevel(int) — caps max wanted level (opcode 01F0). 0x005D45E0 CWeapon::Fire(CEntity*,CVector*) — fires equipped weapon toward a direction. 0x004B9010 CPhysical::GetHasCollidedWith(CEntity*) — returns whether this physical collided with another entity."
   }
 }
 """;

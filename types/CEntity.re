@@ -1,6 +1,9 @@
 class CEntity size 0x64 {
   module GTA.Core
   source "https://gtamods.com/wiki/Memory_Addresses_%28VC%29"
+  fn 0x004898B0 SetModelIndex(uint) : void
+  note fn SetModelIndex "Sets IDE model index; see wiki CEntity section."
+  fn 0x00487D10 GetDistanceFromCentreOfMassToBaseOfModel() : float
   0x000 vtable : pointer
   note vtable "GTAMods Wiki (CEntity): vtable dispatches virtuals — typical slots include destructor (~CEntity), Remove, Add, Render (names/indices as on the wiki table)."
   0x004 matrix : CMatrix

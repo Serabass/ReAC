@@ -130,6 +130,34 @@ public static class HtmlExporter
 
         sb.AppendLine("</tbody></table>");
 
+        sb.AppendLine("<h2>Native functions</h2>");
+        var hasAnyFn = false;
+        foreach (var typeName in chain)
+        {
+            if (!typeMap.TryGetValue(typeName, out var declForFn))
+                continue;
+            if (declForFn.OwnFunctions.Count == 0)
+                continue;
+            hasAnyFn = true;
+            sb.AppendLine("<h3>" + System.Net.WebUtility.HtmlEncode(typeName) + "</h3>");
+            sb.AppendLine(
+                "<table><thead><tr><th>Address</th><th>Name</th><th>Parameters</th><th>Returns</th><th>Note</th></tr></thead><tbody>");
+            foreach (var fn in declForFn.OwnFunctions)
+            {
+                var retCell = string.IsNullOrEmpty(fn.ReturnType)
+                    ? ""
+                    : System.Net.WebUtility.HtmlEncode(fn.ReturnType);
+                var noteFn = string.IsNullOrEmpty(fn.Note) ? "" : System.Net.WebUtility.HtmlEncode(fn.Note);
+                sb.AppendLine(
+                    $"<tr><td>0x{fn.Address:X}</td><td>{System.Net.WebUtility.HtmlEncode(fn.Name)}</td><td>{System.Net.WebUtility.HtmlEncode(fn.Parameters)}</td><td>{retCell}</td><td class=\"prov\">{noteFn}</td></tr>");
+            }
+
+            sb.AppendLine("</tbody></table>");
+        }
+
+        if (!hasAnyFn)
+            sb.AppendLine("<p class=\"prov\">(none declared)</p>");
+
         sb.AppendLine(
             "<h2>Flattened layout</h2><table><thead><tr><th>Off</th><th>Name</th><th>Type</th><th>Declaring</th><th>Layout</th></tr></thead><tbody>");
         foreach (var ff in layout.Flattened)

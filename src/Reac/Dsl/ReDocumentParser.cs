@@ -259,6 +259,12 @@ public static class ReDocumentParser
                 }
             }
 
+            if (TryParseFunctionLine(line, out var fnLine) && fnLine != null)
+            {
+                lines.Add(fnLine);
+                continue;
+            }
+
             var fw = FirstWord(line);
             if (fw.Equals("module", StringComparison.OrdinalIgnoreCase))
             {
@@ -291,6 +297,24 @@ public static class ReDocumentParser
             if (fw.Equals("note", StringComparison.OrdinalIgnoreCase))
             {
                 var rest = line.Substring(4).Trim();
+                if (rest.Length >= 2 && rest.StartsWith("fn", StringComparison.OrdinalIgnoreCase) &&
+                    (rest.Length == 2 || char.IsWhiteSpace(rest[2])))
+                {
+                    var afterFnKw = rest.Substring(2).TrimStart();
+                    var qPos = afterFnKw.IndexOf('"');
+                    if (qPos < 0)
+                        throw new ParseException("note fn: expected string literal");
+                    var fnName = afterFnKw[..qPos].TrimEnd();
+                    if (fnName.Length == 0)
+                        throw new ParseException("note fn: missing function name");
+                    var litPart = afterFnKw[qPos..];
+                    var li = 0;
+                    if (!StringLiterals.TryParse(litPart, ref li, out var fnNoteText))
+                        throw new ParseException("note fn: bad string");
+                    lines.Add(new ReBodyLine.NoteFunctionLine(fnName, fnNoteText));
+                    continue;
+                }
+
                 var si = 0;
                 if (rest.Length > 0 && (char.IsLetter(rest[0]) || rest[0] == '_'))
                 {
@@ -317,6 +341,63 @@ public static class ReDocumentParser
         }
 
         return lines;
+    }
+
+    /// <summary>Parses <c>fn 0xADDR Name(params) [: ReturnType]</c> and optional trailing <c>// note</c>.</summary>
+    private static bool TryParseFunctionLine(string line, out ReBodyLine.FunctionLine? fl)
+    {
+        fl = null;
+        var work = line.Trim();
+        string? inlineNote = null;
+        var cmt = work.IndexOf("//", StringComparison.Ordinal);
+        if (cmt >= 0)
+        {
+            inlineNote = work[(cmt + 2)..].Trim();
+            work = work[..cmt].Trim();
+        }
+
+        if (work.Length < 4 || !work.StartsWith("fn", StringComparison.OrdinalIgnoreCase) ||
+            !char.IsWhiteSpace(work[2]))
+            return false;
+
+        var i = 3;
+        while (i < work.Length && char.IsWhiteSpace(work[i])) i++;
+
+        if (i + 1 >= work.Length || work[i] != '0' || (work[i + 1] != 'x' && work[i + 1] != 'X'))
+            return false;
+        i += 2;
+        var hs = i;
+        while (i < work.Length && Uri.IsHexDigit(work[i])) i++;
+        if (hs == i)
+            return false;
+        var address = int.Parse(work.AsSpan(hs, i - hs), NumberStyles.HexNumber, CultureInfo.InvariantCulture);
+
+        while (i < work.Length && char.IsWhiteSpace(work[i])) i++;
+        var openP = work.IndexOf('(', i);
+        if (openP < 0)
+            return false;
+        var name = work.Substring(i, openP - i).Trim();
+        if (name.Length == 0)
+            return false;
+
+        var closeP = work.LastIndexOf(')');
+        if (closeP <= openP)
+            return false;
+        var parameters = work.Substring(openP + 1, closeP - openP - 1).Trim();
+
+        var after = work.Substring(closeP + 1).Trim();
+        string? retType = null;
+        if (after.Length > 0)
+        {
+            if (!after.StartsWith(':'))
+                return false;
+            retType = after[1..].Trim();
+            if (retType.Length == 0)
+                retType = null;
+        }
+
+        fl = new ReBodyLine.FunctionLine(address, name, parameters, retType, inlineNote);
+        return true;
     }
 
     private static bool TryParseFieldLineRegex(string line, out int offset, out string name, out string typeRest)

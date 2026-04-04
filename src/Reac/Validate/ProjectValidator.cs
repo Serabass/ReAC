@@ -79,6 +79,18 @@ public static class ProjectValidator
                     });
                 CollectUnresolved(f.Type, t.Name, f.Name, typeMap, issues);
             }
+
+            var ownFnAddr = new HashSet<int>();
+            foreach (var fn in t.OwnFunctions)
+            {
+                if (!ownFnAddr.Add(fn.Address))
+                    issues.Add(new ValidationIssue
+                    {
+                        IsError = false,
+                        Message =
+                            $"Type '{t.Name}': duplicate function address 0x{fn.Address:X} in native function list"
+                    });
+            }
         }
 
         var layouts = LayoutEngine.BuildLayouts(project, pointerSizeBytes);

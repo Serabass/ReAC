@@ -31,4 +31,10 @@ public abstract record ReBodyLine
     public sealed record NoteEntityLine(string Text) : ReBodyLine;
     public sealed record FieldLine(int Offset, string Name, TypeExpr Type, string? Note) : ReBodyLine;
     public sealed record NoteFieldLine(string FieldName, string Text) : ReBodyLine;
+
+    /// <param name="Parameters">Comma-separated parameter types as in C++ (opaque text).</param>
+    public sealed record FunctionLine(int Address, string Name, string Parameters, string? ReturnType, string? Note)
+        : ReBodyLine;
+
+    public sealed record NoteFunctionLine(string FunctionName, string Text) : ReBodyLine;
 }

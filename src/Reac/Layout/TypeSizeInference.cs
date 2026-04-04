@@ -86,6 +86,7 @@ public static class TypeSizeInference
             Note = t.Note,
             Provenance = t.Provenance,
             OwnFields = t.OwnFields,
+            OwnFunctions = t.OwnFunctions,
             FilePath = t.FilePath
         };
 }

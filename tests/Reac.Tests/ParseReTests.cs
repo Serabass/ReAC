@@ -48,4 +48,29 @@ public class ParseReTests
         Assert.Equal(10, arr.Length);
         Assert.IsType<TypeExpr.Named>(arr.Element);
     }
+
+    [Fact]
+    public void Parse_fn_native_and_note_fn()
+    {
+        const string src = """
+            struct S {
+              module M
+              fn 0x005D45E0 Fire(CEntity*, CVector*) : void // inline
+              note fn Fire "long note"
+              fn 0x004FF780 SetAmmo(eWeaponType, uint) : void
+            }
+            """;
+        var doc = ReDocumentParser.ParseDocument(src);
+        var td = Assert.IsType<ReTopLevel.TypeDef>(Assert.Single(doc));
+        var fns = td.Body.OfType<ReBodyLine.FunctionLine>().ToList();
+        Assert.Equal(2, fns.Count);
+        Assert.Equal(0x005D45E0, fns[0].Address);
+        Assert.Equal("Fire", fns[0].Name);
+        Assert.Equal("CEntity*, CVector*", fns[0].Parameters);
+        Assert.Equal("void", fns[0].ReturnType);
+        Assert.Equal("inline", fns[0].Note);
+        var nfn = Assert.Single(td.Body.OfType<ReBodyLine.NoteFunctionLine>());
+        Assert.Equal("Fire", nfn.FunctionName);
+        Assert.Equal("long note", nfn.Text);
+    }
 }
