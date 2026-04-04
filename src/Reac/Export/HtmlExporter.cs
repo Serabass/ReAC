@@ -6,6 +6,51 @@ namespace Reac.Export;
 
 public static class HtmlExporter
 {
+    /// <summary>Shared CSS for exported static site (readable tables, sidebar index, responsive).</summary>
+    private const string StylesCommon = """
+<style>
+:root { color-scheme: light dark; }
+*, *::before, *::after { box-sizing: border-box; }
+body { margin: 0; font-family: system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  line-height: 1.55; color: #1a1a1a; background: #e9ecef; }
+a { color: #0b57d0; text-decoration: none; }
+a:hover { text-decoration: underline; }
+code { font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+  font-size: 0.88em; background: #f1f3f5; padding: 0.12em 0.45em; border-radius: 4px; }
+table { width: 100%; border-collapse: collapse; font-size: 0.92rem; margin: 0.5rem 0 1.35rem; }
+th, td { border: 1px solid #cfd6dd; padding: 0.45rem 0.65rem; vertical-align: top; }
+th { background: #e9eef4; font-weight: 600; text-align: left; }
+tbody tr:nth-child(even) { background: #fafbfc; }
+.prov { font-size: 0.88rem; color: #5c6570; }
+h1 { font-size: 1.65rem; font-weight: 600; margin: 0 0 1rem; line-height: 1.25; }
+h2 { font-size: 1.15rem; margin: 1.75rem 0 0.75rem; padding-bottom: 0.35rem; border-bottom: 1px solid #dee3e9; }
+h3 { font-size: 1.05rem; margin: 1.25rem 0 0.5rem; }
+.breadcrumb { margin: 0 0 1.25rem; font-size: 0.95rem; }
+.breadcrumb a { color: #0b57d0; }
+/* Index: sidebar + main */
+.layout { display: flex; max-width: 1280px; margin: 0 auto; min-height: 100vh; background: #fff;
+  box-shadow: 0 0 0 1px #cfd6dd; }
+nav.sidebar { width: 260px; flex-shrink: 0; padding: 1.25rem 1rem; background: #f8f9fa;
+  border-right: 1px solid #dee3e9; position: sticky; top: 0; align-self: flex-start; max-height: 100vh; overflow: auto; }
+nav.sidebar h3 { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: #6c757d;
+  margin: 1.25rem 0 0.5rem; font-weight: 700; }
+nav.sidebar h3:first-child { margin-top: 0; }
+nav.sidebar ul { list-style: none; padding: 0; margin: 0 0 1rem; }
+nav.sidebar li { margin: 0.2rem 0; word-break: break-word; }
+main.index-main { flex: 1; padding: 1.75rem 2rem; min-width: 0; }
+main.index-main > p.lead { color: #5c6570; margin-top: 0; max-width: 52ch; }
+/* Inner pages */
+.page { max-width: 920px; margin: 0 auto; padding: 1.5rem 1.35rem 2.75rem; background: #fff;
+  min-height: 100vh; box-shadow: 0 0 0 1px #cfd6dd; }
+details.ancestor { margin: 0.75rem 0; border: 1px solid #dee3e9; border-radius: 8px; padding: 0.5rem 0.85rem; background: #fafbfc; }
+details.ancestor summary { cursor: pointer; font-weight: 600; }
+@media (max-width: 800px) {
+  .layout { flex-direction: column; }
+  nav.sidebar { width: 100%; position: relative; max-height: none; border-right: none; border-bottom: 1px solid #dee3e9; }
+}
+</style>
+""";
+
     public static void Export(ProjectIr project, string outDir, int pointerSizeBytes)
     {
         Directory.CreateDirectory(outDir);
@@ -13,11 +58,12 @@ public static class HtmlExporter
         var typeMap = project.Types.ToDictionary(t => t.Name, StringComparer.Ordinal);
 
         var indexSb = new StringBuilder();
-        indexSb.AppendLine("<!DOCTYPE html><html><head><meta charset=\"utf-8\"><title>REaC</title>");
-        indexSb.AppendLine(
-            "<style>body{font-family:system-ui,Segoe UI,sans-serif;margin:1rem;} nav{float:left;width:220px;} main{margin-left:240px;} table{border-collapse:collapse;} td,th{border:1px solid #ccc;padding:4px 8px;} .prov{font-size:0.85rem;color:#444;}</style>");
+        indexSb.AppendLine("<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"utf-8\">");
+        indexSb.AppendLine("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">");
+        indexSb.AppendLine("<title>REaC — Knowledge base</title>");
+        indexSb.AppendLine(StylesCommon);
         indexSb.AppendLine("</head><body>");
-        indexSb.AppendLine("<nav><h3>Types</h3><ul>");
+        indexSb.AppendLine("<div class=\"layout\"><nav class=\"sidebar\" aria-label=\"Site\"><h3>Types</h3><ul>");
         foreach (var t in project.Types.OrderBy(x => x.Name))
             indexSb.AppendLine(
                 $"<li><a href=\"type/{EscapeFile(t.Name)}.html\">{System.Net.WebUtility.HtmlEncode(t.Name)}</a></li>");
@@ -29,7 +75,8 @@ public static class HtmlExporter
         foreach (var d in project.Documents.OrderBy(x => x.Id))
             indexSb.AppendLine(
                 $"<li><a href=\"doc/{EscapeFile(d.Id)}.html\">{System.Net.WebUtility.HtmlEncode(d.Title)}</a></li>");
-        indexSb.AppendLine("</ul></nav><main><h1>REaC</h1><p>Generated static site (knowledge base export).</p></main></body></html>");
+        indexSb.AppendLine("</ul></nav><main class=\"index-main\"><h1>REaC</h1>");
+        indexSb.AppendLine("<p class=\"lead\">Reverse-engineering knowledge base — types, bitfields, and documents exported as static HTML.</p></main></div></body></html>");
         File.WriteAllText(Path.Combine(outDir, "index.html"), indexSb.ToString(), Encoding.UTF8);
 
         var typeDir = Path.Combine(outDir, "type");
@@ -86,12 +133,12 @@ public static class HtmlExporter
         IReadOnlyDictionary<string, TypeDecl> typeMap)
     {
         var sb = new StringBuilder();
-        sb.AppendLine("<!DOCTYPE html><html><head><meta charset=\"utf-8\"><title>" +
-                      System.Net.WebUtility.HtmlEncode(t.Name) + "</title>");
-        sb.AppendLine(
-            "<style>body{font-family:system-ui;margin:1rem;} table{border-collapse:collapse;} td,th{border:1px solid #ccc;padding:4px 8px;} .prov{font-size:0.85rem;color:#444;} details.ancestor{margin:0.75rem 0;padding:0.25rem 0.5rem;border:1px solid #ddd;border-radius:4px;} details.ancestor summary{cursor:pointer;font-weight:600;}</style>");
-        sb.AppendLine("</head><body>");
-        sb.AppendLine("<p><a href=\"../index.html\">Index</a></p>");
+        sb.AppendLine("<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"utf-8\">");
+        sb.AppendLine("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">");
+        sb.AppendLine("<title>" + System.Net.WebUtility.HtmlEncode(t.Name) + " — REaC</title>");
+        sb.AppendLine(StylesCommon);
+        sb.AppendLine("</head><body><div class=\"page\">");
+        sb.AppendLine("<p class=\"breadcrumb\"><a href=\"../index.html\">Index</a></p>");
         sb.AppendLine("<h1>" + System.Net.WebUtility.HtmlEncode(t.Name) + " <small>(" +
                       System.Net.WebUtility.HtmlEncode(t.Kind.ToString().ToLowerInvariant()) + ")</small></h1>");
         var sizeText = t.Size > 0 ? $"0x{t.Size:X}" : "(unknown)";
@@ -217,7 +264,7 @@ public static class HtmlExporter
         else
             foreach (var u in unresolved)
                 sb.AppendLine("<li>" + System.Net.WebUtility.HtmlEncode(u) + "</li>");
-        sb.AppendLine("</ul></body></html>");
+        sb.AppendLine("</ul></div></body></html>");
         return sb.ToString();
     }
 
@@ -267,12 +314,12 @@ public static class HtmlExporter
     private static string RenderBitfieldPage(BitfieldTypeDecl b)
     {
         var sb = new StringBuilder();
-        sb.AppendLine("<!DOCTYPE html><html><head><meta charset=\"utf-8\"><title>" +
-                      System.Net.WebUtility.HtmlEncode(b.Name) + "</title>");
-        sb.AppendLine(
-            "<style>body{font-family:system-ui;margin:1rem;} table{border-collapse:collapse;} td,th{border:1px solid #ccc;padding:4px 8px;} .prov{font-size:0.85rem;color:#444;}</style>");
-        sb.AppendLine("</head><body>");
-        sb.AppendLine("<p><a href=\"../index.html\">Index</a></p>");
+        sb.AppendLine("<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"utf-8\">");
+        sb.AppendLine("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">");
+        sb.AppendLine("<title>" + System.Net.WebUtility.HtmlEncode(b.Name) + " — REaC</title>");
+        sb.AppendLine(StylesCommon);
+        sb.AppendLine("</head><body><div class=\"page\">");
+        sb.AppendLine("<p class=\"breadcrumb\"><a href=\"../index.html\">Index</a></p>");
         sb.AppendLine("<h1>" + System.Net.WebUtility.HtmlEncode(b.Name) + " <small>(bitfield)</small></h1>");
         sb.AppendLine("<p>Storage: <code>" + System.Net.WebUtility.HtmlEncode(b.StorageName) + "</code></p>");
         if (!string.IsNullOrEmpty(b.Summary))
@@ -300,18 +347,19 @@ public static class HtmlExporter
                     sb.AppendLine("<li>" + enc + "</li>");
             }
 
-        sb.AppendLine("</ul></div></body></html>");
+        sb.AppendLine("</ul></div></div></body></html>");
         return sb.ToString();
     }
 
     private static string RenderDocPage(DocumentDecl d, ProjectIr project)
     {
         var sb = new StringBuilder();
-        sb.AppendLine("<!DOCTYPE html><html><head><meta charset=\"utf-8\"><title>" +
-                      System.Net.WebUtility.HtmlEncode(d.Title) + "</title>");
-        sb.AppendLine(
-            "<style>body{font-family:system-ui;margin:1rem;} a{color:#06c;}</style></head><body>");
-        sb.AppendLine("<p><a href=\"../index.html\">Index</a></p>");
+        sb.AppendLine("<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"utf-8\">");
+        sb.AppendLine("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">");
+        sb.AppendLine("<title>" + System.Net.WebUtility.HtmlEncode(d.Title) + " — REaC</title>");
+        sb.AppendLine(StylesCommon);
+        sb.AppendLine("</head><body><div class=\"page\">");
+        sb.AppendLine("<p class=\"breadcrumb\"><a href=\"../index.html\">Index</a></p>");
         sb.AppendLine("<h1>" + System.Net.WebUtility.HtmlEncode(d.Title) + "</h1>");
         if (!string.IsNullOrEmpty(d.Summary))
             sb.AppendLine("<p>" + System.Net.WebUtility.HtmlEncode(d.Summary) + "</p>");
@@ -338,7 +386,7 @@ public static class HtmlExporter
             sb.AppendLine("<p>" + System.Net.WebUtility.HtmlEncode(s.Text) + "</p>");
         }
 
-        sb.AppendLine("</body></html>");
+        sb.AppendLine("</div></body></html>");
         return sb.ToString();
     }
 }
