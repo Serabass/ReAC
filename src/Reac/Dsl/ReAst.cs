@@ -10,7 +10,7 @@ public abstract record ReTopLevel
         string? Game,
         string? Version,
         string? Platform,
-        string? SourceUrl) : ReTopLevel;
+        IReadOnlyList<string> SourceUrls) : ReTopLevel;
 
     public sealed record Module(string Name, string? Summary, string? Note, IReadOnlyList<ReBodyLine> Body) : ReTopLevel;
 

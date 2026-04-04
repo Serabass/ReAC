@@ -38,6 +38,7 @@ target gta_vc_1_0_win32 {
   version "1.0"
   platform "win32"
   source "https://gtamods.com/wiki/Memory_Addresses_%28VC%29"
+  source "https://gtamods.com/wiki/Function_Memory_Addresses_%28VC%29"
 }
 """;
 
@@ -57,6 +58,7 @@ module RenderWare.Core {
 struct CVector size 0x0C {
   module GTA.Core
   source "https://gtamods.com/wiki/Memory_Addresses_%28VC%29"
+  source "https://gtamods.com/wiki/Function_Memory_Addresses_%28VC%29"
   0x000 x : float
   0x004 y : float
   0x008 z : float
@@ -67,6 +69,7 @@ struct CVector size 0x0C {
 struct CMatrix size 0x40 {
   module GTA.Core
   source "https://gtamods.com/wiki/Memory_Addresses_%28VC%29"
+  source "https://gtamods.com/wiki/Function_Memory_Addresses_%28VC%29"
   0x000 right : CVector
   0x010 up : CVector
   0x020 at : CVector
@@ -78,6 +81,7 @@ struct CMatrix size 0x40 {
 struct CWeapon size 0x18 {
   module GTA.Core
   source "https://gtamods.com/wiki/Memory_Addresses_%28VC%29"
+  source "https://gtamods.com/wiki/Function_Memory_Addresses_%28VC%29"
   fn 0x005D45E0 Fire(CEntity*, CVector*) : void // wiki: CWeapon::Fire
   note fn Fire "Address and signature from Function_Memory_Addresses_(VC); thiscall on CWeapon instance."
   0x000 weaponType : uint32
@@ -91,6 +95,7 @@ struct CWeapon size 0x18 {
 struct CWanted size 0x24 {
   module GTA.Core
   source "https://gtamods.com/wiki/Memory_Addresses_%28VC%29"
+  source "https://gtamods.com/wiki/Function_Memory_Addresses_%28VC%29"
   fn 0x004D1E90 SetMaximumWantedLevel(int) : void
   note fn SetMaximumWantedLevel "Script-facing cap for max wanted (wiki ties to opcode 01F0)."
   0x000 chaos : uint32
@@ -103,6 +108,7 @@ struct CWanted size 0x24 {
 class CEntity size 0x64 {
   module GTA.Core
   source "https://gtamods.com/wiki/Memory_Addresses_%28VC%29"
+  source "https://gtamods.com/wiki/Function_Memory_Addresses_%28VC%29"
   fn 0x004898B0 SetModelIndex(uint) : void
   note fn SetModelIndex "Sets IDE model index; see wiki CEntity section."
   fn 0x00487D10 GetDistanceFromCentreOfMassToBaseOfModel() : float
@@ -128,6 +134,7 @@ class CEntity size 0x64 {
 class CPhysical : CEntity size 0x120 {
   module GTA.Core
   source "https://gtamods.com/wiki/Memory_Addresses_%28VC%29"
+  source "https://gtamods.com/wiki/Function_Memory_Addresses_%28VC%29"
   fn 0x004B9010 GetHasCollidedWith(CEntity*) : bool
   note fn GetHasCollidedWith "Returns whether this physical is colliding with the given entity."
   0x064 audioEntity : uint32
@@ -152,6 +159,7 @@ class CPhysical : CEntity size 0x120 {
 class CPed : CPhysical {
   module GTA.Core
   source "https://gtamods.com/wiki/Memory_Addresses_%28VC%29"
+  source "https://gtamods.com/wiki/Function_Memory_Addresses_%28VC%29"
   fn 0x004FF780 SetAmmo(eWeaponType, uint) : void
   fn 0x004FF840 GrantAmmo(eWeaponType, uint) : void
   note fn SetAmmo "Sets ammo for a weapon slot (wiki links script opcode 017B)."

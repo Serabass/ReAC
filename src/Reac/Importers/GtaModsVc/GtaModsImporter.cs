@@ -45,6 +45,7 @@ public static class GtaModsImporter
             sb.AppendLine($"{kind} {section}{(parent != null ? " : " + parent : "")} size 0x{totalSize:X} {{");
             sb.AppendLine("  module GTA.Core");
             sb.AppendLine($"  source \"{opt.Url}\"");
+            sb.AppendLine("  source \"https://gtamods.com/wiki/Function_Memory_Addresses_%28VC%29\"");
             sb.AppendLine($"  summary \"Imported from GTAMods Wiki ({section})\"");
             foreach (var row in lines)
             {

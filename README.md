@@ -45,7 +45,7 @@ docker compose run --rm reac dotnet run --project src/Reac -- export-html
 
 ## DSL (кратко)
 
-- **`.re`**: `target`, `module`, `class`/`struct`, поля `0xOFFSET name : type`, наследование, `pointer_size_bytes` в target.
+- **`.re`**: `target`, `module`, `class`/`struct`, поля `0xOFFSET name : type`, наследование, `pointer_size_bytes` в target. Строка **`source "url"`** может повторяться (несколько источников — порядок сохраняется).
 - **Нативные функции** (точки входа в `.exe`, на размер структуры не влияют): `fn 0xADDR Name(paramTypes...) [: ReturnType]`; краткий комментарий в той же строке — через `//`; развёрнутое описание — `note fn Name "..."` (имя должно совпадать с именем в строке `fn`).
 - **`size` в типе**: можно указать явно (`class Foo : Bar size 0x120 { ... }`) или **опустить** — тогда итоговый размер **выводится** из цепочки полей (max offset + span), если все вложенные типы и скаляры разрешимы. Используйте явный `size`, если нужен канон (вики) при неполной таблице полей.
 - **`.rdoc`**: `document Id { title, summary, references { ref Name }, section ... }`.

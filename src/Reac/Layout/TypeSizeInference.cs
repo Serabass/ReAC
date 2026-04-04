@@ -81,7 +81,7 @@ public static class TypeSizeInference
             DeclaredSize = t.DeclaredSize,
             Size = size,
             ModuleName = t.ModuleName,
-            SourceUrl = t.SourceUrl,
+            SourceUrls = t.SourceUrls,
             Summary = t.Summary,
             Note = t.Note,
             Provenance = t.Provenance,

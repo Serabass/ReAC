@@ -1,6 +1,7 @@
 class CEntity size 0x64 {
   module GTA.Core
   source "https://gtamods.com/wiki/Memory_Addresses_%28VC%29"
+  source "https://gtamods.com/wiki/Function_Memory_Addresses_%28VC%29"
   fn 0x004898B0 SetModelIndex(uint) : void
   note fn SetModelIndex "Sets IDE model index; see wiki CEntity section."
   fn 0x00487D10 GetDistanceFromCentreOfMassToBaseOfModel() : float

@@ -106,20 +106,20 @@ public static class ReDocumentParser
         ExpectKeyword(text, ref i, "target");
         var id = ParseIdent(text, ref i);
         var body = ParseBlock(text, ref i);
-        var d = ParseTargetKeyValues(body);
+        var (d, sourceUrls) = ParseTargetKeyValues(body);
         var ps = 4;
         if (d.TryGetValue("pointer_size_bytes", out var psv) && int.TryParse(psv, out var p))
             ps = p;
         d.TryGetValue("game", out var game);
         d.TryGetValue("version", out var version);
         d.TryGetValue("platform", out var platform);
-        d.TryGetValue("source", out var source);
-        return new ReTopLevel.Target(id, ps, game, version, platform, source);
+        return new ReTopLevel.Target(id, ps, game, version, platform, sourceUrls);
     }
 
-    private static Dictionary<string, string> ParseTargetKeyValues(string body)
+    private static (Dictionary<string, string> Values, List<string> SourceUrls) ParseTargetKeyValues(string body)
     {
         var d = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        var sourceUrls = new List<string>();
         var i = 0;
         while (i < body.Length)
         {
@@ -137,10 +137,17 @@ public static class ReDocumentParser
 
             if (!StringLiterals.TryParse(body, ref i, out var str))
                 throw new ParseException($"Expected string value for '{key}' in target");
+
+            if (key.Equals("source", StringComparison.OrdinalIgnoreCase))
+            {
+                sourceUrls.Add(str);
+                continue;
+            }
+
             d[key] = str;
         }
 
-        return d;
+        return (d, sourceUrls);
     }
 
     private static string ReadWord(string s, ref int i)

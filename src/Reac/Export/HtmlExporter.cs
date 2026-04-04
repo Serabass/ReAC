@@ -114,7 +114,21 @@ public static class HtmlExporter
         }
         sb.AppendLine("<h2>Provenance</h2><div class=\"prov\">");
         sb.AppendLine("<div>File: " + System.Net.WebUtility.HtmlEncode(t.FilePath) + "</div>");
-        sb.AppendLine("<div>Source URL: " + System.Net.WebUtility.HtmlEncode(t.SourceUrl ?? "") + "</div>");
+        sb.AppendLine("<div>Sources:</div><ul class=\"prov\">");
+        if (t.SourceUrls.Count == 0)
+            sb.AppendLine("<li>(none)</li>");
+        else
+            foreach (var u in t.SourceUrls)
+            {
+                var enc = System.Net.WebUtility.HtmlEncode(u);
+                if (u.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
+                    u.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+                    sb.AppendLine($"<li><a href=\"{enc}\">{enc}</a></li>");
+                else
+                    sb.AppendLine("<li>" + enc + "</li>");
+            }
+
+        sb.AppendLine("</ul>");
         sb.AppendLine("</div>");
 
         sb.AppendLine(

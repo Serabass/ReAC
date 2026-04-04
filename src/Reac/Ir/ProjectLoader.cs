@@ -90,7 +90,7 @@ public static class ProjectLoader
             Game = t.Game,
             Version = t.Version,
             Platform = t.Platform,
-            SourceUrl = t.SourceUrl,
+            SourceUrls = t.SourceUrls,
             FilePath = file
         };
 
@@ -150,10 +150,12 @@ public static class ProjectLoader
             }
         }
 
-        string? src = null, sum = null, note = null, mod = null;
+        var sources = new List<string>();
+        string? sum = null, note = null, mod = null;
         foreach (var line in td.Body)
         {
-            if (line is ReBodyLine.SourceLine s) src = s.Url;
+            if (line is ReBodyLine.SourceLine s)
+                sources.Add(s.Url);
             if (line is ReBodyLine.SummaryLine sm) sum = sm.Text;
             if (line is ReBodyLine.NoteEntityLine n) note = n.Text;
             if (line is ReBodyLine.ModuleLine ml) mod = ml.ModuleName;
@@ -167,7 +169,7 @@ public static class ProjectLoader
             DeclaredSize = td.DeclaredSize,
             Size = td.DeclaredSize ?? 0,
             ModuleName = mod,
-            SourceUrl = src,
+            SourceUrls = sources,
             Summary = sum,
             Note = note,
             Provenance = null,

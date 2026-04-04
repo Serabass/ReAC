@@ -36,7 +36,7 @@ public sealed class TypeDecl
     /// <summary>Effective object size: explicit or inferred; 0 means unknown/indeterminate.</summary>
     public required int Size { get; init; }
     public string? ModuleName { get; init; }
-    public string? SourceUrl { get; init; }
+    public required IReadOnlyList<string> SourceUrls { get; init; }
     public string? Summary { get; init; }
     public string? Note { get; init; }
     public Provenance? Provenance { get; init; }
@@ -60,7 +60,7 @@ public sealed class TargetDecl
     public string? Game { get; init; }
     public string? Version { get; init; }
     public string? Platform { get; init; }
-    public string? SourceUrl { get; init; }
+    public required IReadOnlyList<string> SourceUrls { get; init; }
     public required string FilePath { get; init; }
 }
 

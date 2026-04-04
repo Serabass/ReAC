@@ -50,6 +50,23 @@ public class ParseReTests
     }
 
     [Fact]
+    public void ParseType_preserves_multiple_source_lines_order()
+    {
+        const string src = """
+            struct T size 0x4 {
+              module M
+              source "https://a.example/mem"
+              source "https://b.example/fn"
+              0x0 x : uint32
+            }
+            """;
+        var doc = ReDocumentParser.ParseDocument(src);
+        var td = Assert.IsType<ReTopLevel.TypeDef>(Assert.Single(doc));
+        var urls = td.Body.OfType<ReBodyLine.SourceLine>().Select(s => s.Url).ToList();
+        Assert.Equal(new[] { "https://a.example/mem", "https://b.example/fn" }, urls);
+    }
+
+    [Fact]
     public void Parse_fn_native_and_note_fn()
     {
         const string src = """

@@ -17,6 +17,7 @@ public class TypeSizeInferenceTests
             Size = 16,
             OwnFields = Array.Empty<FieldDecl>(),
             OwnFunctions = Array.Empty<FunctionDecl>(),
+            SourceUrls = Array.Empty<string>(),
             FilePath = "a.re"
         };
         var b = new TypeDecl
@@ -31,6 +32,7 @@ public class TypeSizeInferenceTests
                 new FieldDecl { Offset = 20, Name = "z", Type = new TypeExpr.Scalar("uint32") }
             ],
             OwnFunctions = Array.Empty<FunctionDecl>(),
+            SourceUrls = Array.Empty<string>(),
             FilePath = "b.re"
         };
         var list = new List<TypeDecl> { a, b };
