@@ -6,4 +6,3 @@ struct CVector size 0x0C {
   0x004 y : float
   0x008 z : float
 }
-
