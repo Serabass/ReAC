@@ -36,6 +36,8 @@ public class TypeSizeInferenceTests
           Type = new TypeExpr.Scalar("uint32"),
           FlagBits = null,
           BitfieldTypeName = null,
+          EnumTypeName = null,
+          EnumValues = null,
         },
       ],
       OwnFunctions = Array.Empty<FunctionDecl>(),

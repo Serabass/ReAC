@@ -36,9 +36,11 @@ public static class ReDocumentParser
         list.Add(ParseType(text, ref i, TypeKind.Struct));
       else if (kw == "bitfield")
         list.Add(ParseBitfieldTopLevel(text, ref i));
+      else if (kw == "enum")
+        list.Add(ParseEnumTopLevel(text, ref i));
       else
         throw new ParseException(
-          $"Unexpected at {i}: expected target, module, class, struct, bitfield"
+          $"Unexpected at {i}: expected target, module, class, struct, bitfield, enum"
         );
     }
 
@@ -108,6 +110,37 @@ public static class ReDocumentParser
     }
 
     return int.Parse(sb.ToString(), CultureInfo.InvariantCulture);
+  }
+
+  /// <summary>Unsigned decimal or hex literal for enum values.</summary>
+  private static ulong ParseULong(string text, ref int i)
+  {
+    StringLiterals.SkipNoise(text, ref i);
+    if (i + 1 < text.Length && text[i] == '0' && (text[i + 1] == 'x' || text[i + 1] == 'X'))
+    {
+      i += 2;
+      var start = i;
+      while (i < text.Length && Uri.IsHexDigit(text[i]))
+        i++;
+      if (start == i)
+        throw new ParseException("enum: expected hex digits after 0x");
+      return ulong.Parse(
+        text.AsSpan(start, i - start),
+        NumberStyles.HexNumber,
+        CultureInfo.InvariantCulture
+      );
+    }
+
+    var sb = new StringBuilder();
+    while (i < text.Length && char.IsDigit(text[i]))
+    {
+      sb.Append(text[i]);
+      i++;
+    }
+
+    if (sb.Length == 0)
+      throw new ParseException("enum: expected numeric value");
+    return ulong.Parse(sb.ToString(), CultureInfo.InvariantCulture);
   }
 
   private static ReTopLevel ParseTarget(string text, ref int i)
@@ -313,6 +346,118 @@ public static class ReDocumentParser
       throw new ParseException("bitfield: at least one bit line required");
 
     return (bits, sources, summary, note);
+  }
+
+  private static ReTopLevel ParseEnumTopLevel(string text, ref int i)
+  {
+    ExpectKeyword(text, ref i, "enum");
+    var name = ParseIdent(text, ref i);
+    StringLiterals.SkipNoise(text, ref i);
+    if (i >= text.Length || text[i] != ':')
+      throw new ParseException("enum: expected ':' after name");
+    i++;
+    var storage = ParseIdent(text, ref i);
+    var body = ParseBlock(text, ref i);
+    var (values, sources, summary, note) = ParseEnumInnerLines(body);
+    return new ReTopLevel.EnumDef(name, storage, values, sources, summary, note);
+  }
+
+  private static (
+    IReadOnlyList<(ulong Value, string Name, string? Description)> Values,
+    IReadOnlyList<string> SourceUrls,
+    string? Summary,
+    string? Note
+  ) ParseEnumInnerLines(string body)
+  {
+    var values = new List<(ulong Value, string Name, string? Description)>();
+    var sources = new List<string>();
+    string? summary = null,
+      note = null;
+    var seenVals = new HashSet<ulong>();
+    var seenNames = new HashSet<string>(StringComparer.Ordinal);
+    var lineStart = 0;
+    while (lineStart < body.Length)
+    {
+      StringLiterals.SkipNoise(body, ref lineStart);
+      if (lineStart >= body.Length)
+        break;
+
+      var lineBegin = lineStart;
+      var lineEnd = lineStart;
+      while (lineEnd < body.Length && body[lineEnd] != '\n' && body[lineEnd] != '\r')
+        lineEnd++;
+      var line = body.Substring(lineBegin, lineEnd - lineBegin).Trim();
+      var ni = lineEnd;
+      if (ni < body.Length && body[ni] == '\r')
+        ni++;
+      if (ni < body.Length && body[ni] == '\n')
+        ni++;
+      lineStart = ni;
+
+      if (string.IsNullOrWhiteSpace(line) || line.StartsWith("//", StringComparison.Ordinal))
+        continue;
+
+      var fw = FirstWord(line);
+      if (fw.Equals("source", StringComparison.OrdinalIgnoreCase))
+      {
+        var r = line.AsSpan(6).Trim();
+        var si = 0;
+        var s = r.ToString();
+        if (!StringLiterals.TryParse(s, ref si, out var url))
+          throw new ParseException("enum source: bad string");
+        sources.Add(url);
+        continue;
+      }
+
+      if (fw.Equals("summary", StringComparison.OrdinalIgnoreCase))
+      {
+        var s = line.Substring(7).Trim();
+        var si = 0;
+        if (!StringLiterals.TryParse(s, ref si, out var sm))
+          throw new ParseException("enum summary: bad string");
+        summary = sm;
+        continue;
+      }
+
+      if (fw.Equals("note", StringComparison.OrdinalIgnoreCase))
+      {
+        var rest = line.Substring(4).Trim();
+        var si = 0;
+        if (!StringLiterals.TryParse(rest, ref si, out var nt))
+          throw new ParseException("enum note: bad string");
+        note = nt;
+        continue;
+      }
+
+      var li = 0;
+      var val = ParseULong(line, ref li);
+      StringLiterals.SkipNoise(line, ref li);
+      var memberName = ParseIdent(line, ref li);
+      StringLiterals.SkipNoise(line, ref li);
+      string? desc = null;
+      if (li < line.Length)
+      {
+        if (!StringLiterals.TryParse(line, ref li, out desc))
+          throw new ParseException(
+            $"enum: expected optional string description after '{memberName}', got: {line}"
+          );
+        StringLiterals.SkipNoise(line, ref li);
+        if (li < line.Length)
+          throw new ParseException($"enum: trailing content after description: {line}");
+      }
+
+      if (!seenVals.Add(val))
+        throw new ParseException($"enum: duplicate value {val}");
+      if (!seenNames.Add(memberName))
+        throw new ParseException($"enum: duplicate member name '{memberName}'");
+
+      values.Add((val, memberName, desc));
+    }
+
+    if (values.Count == 0)
+      throw new ParseException("enum: at least one enumerator line required");
+
+    return (values, sources, summary, note);
   }
 
   private static string ParseBlock(string text, ref int i)

@@ -38,6 +38,16 @@ public abstract record ReTopLevel
     string? Summary,
     string? Note
   ) : ReTopLevel;
+
+  /// <summary>Named enumeration; storage is a fixed-size scalar. Values are unsigned; optional quoted description per line.</summary>
+  public sealed record EnumDef(
+    string Name,
+    string StorageName,
+    IReadOnlyList<(ulong Value, string Name, string? Description)> Values,
+    IReadOnlyList<string> SourceUrls,
+    string? Summary,
+    string? Note
+  ) : ReTopLevel;
 }
 
 public abstract record ReBodyLine

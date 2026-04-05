@@ -50,6 +50,34 @@ public class ParseReTests
   }
 
   [Fact]
+  public void Parse_enum_top_level_optional_descriptions_and_field_reference()
+  {
+    const string src = """
+      enum MyKind : byte {
+        summary "Kinds of thing."
+        0 Alpha "First."
+        10 Beta
+      }
+      struct T size 0x10 {
+        module M
+        0x0 kind : MyKind
+      }
+      """;
+    var doc = ReDocumentParser.ParseDocument(src);
+    Assert.Equal(2, doc.Count);
+    var en = Assert.IsType<ReTopLevel.EnumDef>(doc[0]);
+    Assert.Equal("MyKind", en.Name);
+    Assert.Equal("byte", en.StorageName);
+    Assert.Equal(2, en.Values.Count);
+    Assert.Equal((0UL, "Alpha", "First."), en.Values[0]);
+    Assert.Equal((10UL, "Beta", null), en.Values[1]);
+    var td = Assert.IsType<ReTopLevel.TypeDef>(doc[1]);
+    var fl = Assert.Single(td.Body.OfType<ReBodyLine.FieldLine>());
+    Assert.IsType<TypeExpr.Named>(fl.Type);
+    Assert.Equal("MyKind", ((TypeExpr.Named)fl.Type).Name);
+  }
+
+  [Fact]
   public void Parse_bitfield_top_level_and_field_reference()
   {
     const string src = """

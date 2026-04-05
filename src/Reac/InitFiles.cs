@@ -27,6 +27,7 @@ generated_dir = "generated"
     ("types/CEntity.re", CEntity),
     ("types/CPhysical.re", CPhysical),
     ("types/CObjectFlags.re", CObjectFlags),
+    ("types/EWeaponType.re", EWeaponType),
     ("types/CObject.re", CObject),
     ("types/CPed.re", CPed),
     ("docs/Overview.rdoc", OverviewRdoc),
@@ -86,7 +87,7 @@ struct CWeapon size 0x18 {
   source "https://example.com/reverse/sample-functions"
   fn 0x005D45E0 Fire(CEntity*, CVector*) : void // sample: main fire dispatch
   note fn Fire "Illustrative native entry; replace address/signature for your build."
-  0x000 weaponType : uint32
+  0x000 weaponType : eWeaponType
   0x004 status : uint32
   0x008 clip : uint32
   0x00C ammo : uint32
@@ -180,6 +181,17 @@ bitfield CObjectObjectFlags2 : byte {
 
 """;
 
+  private const string EWeaponType = """
+enum eWeaponType : uint32 {
+  source "https://example.com/reverse/sample-memory"
+  summary "Illustrative weapon type ids (sample; replace with your game's table)."
+  0 WEAPON_UNARMED "No weapon equipped."
+  1 WEAPON_BASEBALLBAT
+  22 WEAPON_PISTOL "Standard sidearm."
+}
+
+""";
+
   private const string CObject = """
 class CObject : CPhysical size 0x1A0 {
   module Sample.Core
@@ -257,6 +269,7 @@ document Sample_Memory_Model {
     ref CObject
     ref CObjectObjectFlags1
     ref CObjectObjectFlags2
+    ref eWeaponType
   }
   summary "Example .re types showing inheritance, field offsets, optional native function entry points, and bitfield annotations. Replace sources and names with your binary's provenance."
   section Inheritance {
@@ -267,6 +280,9 @@ document Sample_Memory_Model {
   }
   section Bitfields {
     text "Define named flag layouts as top-level bitfield Name : StorageScalar { N bitName; ... } where StorageScalar is any fixed-size scalar (byte, uint16, uint32, uint64, float, double, pointer, …). Bit indices are 0 .. 8*size-1. Optionally use a separate .re file; then use that name as the field type. Examples: CObjectObjectFlags1, CObjectObjectFlags2."
+  }
+  section Enums {
+    text "Top-level enum Name : StorageScalar { N EnumeratorName optional-quoted-description; ... }. Values are unsigned and must fit the storage width. Use the enum name as a field type (layout uses the underlying scalar). Example: eWeaponType on CWeapon.weaponType."
   }
   section Function_entry_points {
     text "When you document exports or addresses, list them as fn entries on the relevant type. Cross-link external write-ups in source lines or notes."

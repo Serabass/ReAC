@@ -16,6 +16,7 @@ public static class ProjectValidator
     var issues = new List<ValidationIssue>();
     var typeMap = project.Types.ToDictionary(t => t.Name, StringComparer.Ordinal);
     var bitfieldNames = project.BitfieldTypes.Select(b => b.Name).ToHashSet(StringComparer.Ordinal);
+    var enumNames = project.EnumTypes.Select(e => e.Name).ToHashSet(StringComparer.Ordinal);
 
     foreach (var g in project.Types.GroupBy(t => t.Name).Where(g => g.Count() > 1))
       issues.Add(new ValidationIssue { IsError = true, Message = $"Duplicate type name: {g.Key}" });
@@ -28,6 +29,26 @@ public static class ProjectValidator
           {
             IsError = true,
             Message = $"Name '{bn}' is used both as a class/struct type and as a bitfield type",
+          }
+        );
+    }
+
+    foreach (var en in enumNames)
+    {
+      if (typeMap.ContainsKey(en))
+        issues.Add(
+          new ValidationIssue
+          {
+            IsError = true,
+            Message = $"Name '{en}' is used both as a class/struct type and as an enum type",
+          }
+        );
+      if (bitfieldNames.Contains(en))
+        issues.Add(
+          new ValidationIssue
+          {
+            IsError = true,
+            Message = $"Name '{en}' is used both as a bitfield type and as an enum type",
           }
         );
     }
@@ -210,13 +231,13 @@ public static class ProjectValidator
     {
       foreach (var r in d.References)
       {
-        if (!typeMap.ContainsKey(r) && !bitfieldNames.Contains(r))
+        if (!typeMap.ContainsKey(r) && !bitfieldNames.Contains(r) && !enumNames.Contains(r))
           issues.Add(
             new ValidationIssue
             {
               IsError = true,
               Message =
-                $"Document '{d.Id}': ref '{r}' not found (no type or bitfield with that name)",
+                $"Document '{d.Id}': ref '{r}' not found (no type, bitfield, or enum with that name)",
             }
           );
       }

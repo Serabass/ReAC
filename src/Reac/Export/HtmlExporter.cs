@@ -75,6 +75,11 @@ details.ancestor summary { cursor: pointer; font-weight: 600; }
       indexSb.AppendLine(
         $"<li><a href=\"bitfield/{EscapeFile(b.Name)}.html\">{System.Net.WebUtility.HtmlEncode(b.Name)}</a></li>"
       );
+    indexSb.AppendLine("</ul><h3>Enum types</h3><ul>");
+    foreach (var e in project.EnumTypes.OrderBy(x => x.Name))
+      indexSb.AppendLine(
+        $"<li><a href=\"enum/{EscapeFile(e.Name)}.html\">{System.Net.WebUtility.HtmlEncode(e.Name)}</a></li>"
+      );
     indexSb.AppendLine("</ul><h3>Docs</h3><ul>");
     foreach (var d in project.Documents.OrderBy(x => x.Id))
       indexSb.AppendLine(
@@ -82,7 +87,7 @@ details.ancestor summary { cursor: pointer; font-weight: 600; }
       );
     indexSb.AppendLine("</ul></nav><main class=\"index-main\"><h1>REaC</h1>");
     indexSb.AppendLine(
-      "<p class=\"lead\">Reverse-engineering knowledge base — types, bitfields, and documents exported as static HTML.</p></main></div></body></html>"
+      "<p class=\"lead\">Reverse-engineering knowledge base — types, bitfields, enums, and documents exported as static HTML.</p></main></div></body></html>"
     );
     File.WriteAllText(Path.Combine(outDir, "index.html"), indexSb.ToString(), Encoding.UTF8);
 
@@ -117,6 +122,14 @@ details.ancestor summary { cursor: pointer; font-weight: 600; }
         html,
         Encoding.UTF8
       );
+    }
+
+    var enumDir = Path.Combine(outDir, "enum");
+    Directory.CreateDirectory(enumDir);
+    foreach (var e in project.EnumTypes)
+    {
+      var html = RenderEnumPage(e);
+      File.WriteAllText(Path.Combine(enumDir, EscapeFile(e.Name) + ".html"), html, Encoding.UTF8);
     }
   }
 
@@ -194,8 +207,8 @@ details.ancestor summary { cursor: pointer; font-weight: 600; }
         );
         foreach (var f in anc.OwnFields)
         {
-          var n = FormatFieldNoteCell(f.Note, f.FlagBits);
-          var typeCell = FieldTypeHtml(f.Type, f.BitfieldTypeName, depth: 1);
+          var n = FormatFieldNoteCell(f.Note, f.FlagBits, f.EnumValues);
+          var typeCell = FieldTypeHtml(f.Type, f.BitfieldTypeName, f.EnumTypeName, depth: 1);
           sb.AppendLine(
             $"<tr><td>0x{f.Offset:X}</td><td>{System.Net.WebUtility.HtmlEncode(f.Name)}</td><td>{typeCell}</td><td class=\"prov\">{n}</td></tr>"
           );
@@ -230,8 +243,8 @@ details.ancestor summary { cursor: pointer; font-weight: 600; }
     );
     foreach (var f in layout.OwnFields)
     {
-      var noteCell = FormatFieldNoteCell(f.Note, f.FlagBits);
-      var typeCell = FieldTypeHtml(f.Type, f.BitfieldTypeName, depth: 1);
+      var noteCell = FormatFieldNoteCell(f.Note, f.FlagBits, f.EnumValues);
+      var typeCell = FieldTypeHtml(f.Type, f.BitfieldTypeName, f.EnumTypeName, depth: 1);
       sb.AppendLine(
         $"<tr><td>0x{f.Offset:X}</td><td>{System.Net.WebUtility.HtmlEncode(f.Name)}</td><td>{typeCell}</td><td class=\"prov\">{noteCell}</td></tr>"
       );
@@ -274,7 +287,7 @@ details.ancestor summary { cursor: pointer; font-weight: 600; }
     );
     foreach (var ff in layout.Flattened)
     {
-      var typeCell = FieldTypeHtml(ff.Type, ff.BitfieldTypeName, depth: 1);
+      var typeCell = FieldTypeHtml(ff.Type, ff.BitfieldTypeName, ff.EnumTypeName, depth: 1);
       sb.AppendLine(
         $"<tr><td>0x{ff.Offset:X}</td><td>{System.Net.WebUtility.HtmlEncode(ff.Name)}</td><td>{typeCell}</td><td>{System.Net.WebUtility.HtmlEncode(ff.DeclaringTypeName)}</td><td>{(ff.Indeterminate ? "indeterminate" : "")}</td></tr>"
       );
@@ -291,8 +304,8 @@ details.ancestor summary { cursor: pointer; font-weight: 600; }
       );
       foreach (var ff in g)
       {
-        var noteBits = FormatFieldNoteCell(ff.Note, ff.FlagBits);
-        var typeCell = FieldTypeHtml(ff.Type, ff.BitfieldTypeName, depth: 1);
+        var noteBits = FormatFieldNoteCell(ff.Note, ff.FlagBits, ff.EnumValues);
+        var typeCell = FieldTypeHtml(ff.Type, ff.BitfieldTypeName, ff.EnumTypeName, depth: 1);
         sb.AppendLine(
           $"<tr><td>0x{ff.Offset:X}</td><td>{System.Net.WebUtility.HtmlEncode(ff.Name)}</td><td>{typeCell}</td><td class=\"prov\">{noteBits}</td></tr>"
         );
@@ -311,7 +324,11 @@ details.ancestor summary { cursor: pointer; font-weight: 600; }
     return sb.ToString();
   }
 
-  private static string FormatFieldNoteCell(string? note, IReadOnlyList<FlagBitDecl>? bits)
+  private static string FormatFieldNoteCell(
+    string? note,
+    IReadOnlyList<FlagBitDecl>? bits,
+    IReadOnlyList<EnumValueDecl>? enumVals
+  )
   {
     var parts = new List<string>();
     if (!string.IsNullOrEmpty(note))
@@ -329,6 +346,24 @@ details.ancestor summary { cursor: pointer; font-weight: 600; }
       parts.Add(ul.ToString());
     }
 
+    if (enumVals is { Count: > 0 })
+    {
+      var ul = new StringBuilder("<ul class=\"prov\">");
+      foreach (var ev in enumVals.OrderBy(x => x.Value))
+      {
+        ul.Append("<li>")
+          .Append(ev.Value)
+          .Append(": ")
+          .Append(System.Net.WebUtility.HtmlEncode(ev.Name));
+        if (!string.IsNullOrEmpty(ev.Description))
+          ul.Append(" — ").Append(System.Net.WebUtility.HtmlEncode(ev.Description));
+        ul.Append("</li>");
+      }
+
+      ul.Append("</ul>");
+      parts.Add(ul.ToString());
+    }
+
     return string.Join("", parts);
   }
 
@@ -342,8 +377,13 @@ details.ancestor summary { cursor: pointer; font-weight: 600; }
       _ => "?",
     };
 
-  /// <param name="depth">1 = page under type/ (link to ../bitfield/…)</param>
-  private static string FieldTypeHtml(TypeExpr t, string? bitfieldTypeName, int depth)
+  /// <param name="depth">1 = page under type/ (link to ../bitfield/… or ../enum/…)</param>
+  private static string FieldTypeHtml(
+    TypeExpr t,
+    string? bitfieldTypeName,
+    string? enumTypeName,
+    int depth
+  )
   {
     if (bitfieldTypeName != null && t is TypeExpr.Scalar s)
     {
@@ -354,6 +394,17 @@ details.ancestor summary { cursor: pointer; font-weight: 600; }
       var encBf = System.Net.WebUtility.HtmlEncode(bitfieldTypeName);
       var encSc = System.Net.WebUtility.HtmlEncode(s.Name);
       return $"<a href=\"{href}\">{encBf}</a> <span class=\"prov\">({encSc})</span>";
+    }
+
+    if (enumTypeName != null && t is TypeExpr.Scalar sEn)
+    {
+      var href =
+        depth == 1
+          ? $"../enum/{EscapeFile(enumTypeName)}.html"
+          : $"enum/{EscapeFile(enumTypeName)}.html";
+      var encEn = System.Net.WebUtility.HtmlEncode(enumTypeName);
+      var encSc = System.Net.WebUtility.HtmlEncode(sEn.Name);
+      return $"<a href=\"{href}\">{encEn}</a> <span class=\"prov\">({encSc})</span>";
     }
 
     return System.Net.WebUtility.HtmlEncode(TypeString(t));
@@ -406,6 +457,59 @@ details.ancestor summary { cursor: pointer; font-weight: 600; }
     return sb.ToString();
   }
 
+  private static string RenderEnumPage(EnumTypeDecl e)
+  {
+    var sb = new StringBuilder();
+    sb.AppendLine("<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"utf-8\">");
+    sb.AppendLine("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">");
+    sb.AppendLine("<title>" + System.Net.WebUtility.HtmlEncode(e.Name) + " — REaC</title>");
+    sb.AppendLine(StylesCommon);
+    sb.AppendLine("</head><body><div class=\"page\">");
+    sb.AppendLine("<p class=\"breadcrumb\"><a href=\"../index.html\">Index</a></p>");
+    sb.AppendLine(
+      "<h1>" + System.Net.WebUtility.HtmlEncode(e.Name) + " <small>(enum)</small></h1>"
+    );
+    sb.AppendLine(
+      "<p>Storage: <code>" + System.Net.WebUtility.HtmlEncode(e.StorageName) + "</code></p>"
+    );
+    if (!string.IsNullOrEmpty(e.Summary))
+      sb.AppendLine("<p class=\"prov\">" + System.Net.WebUtility.HtmlEncode(e.Summary) + "</p>");
+    if (!string.IsNullOrEmpty(e.Note))
+      sb.AppendLine("<p class=\"prov\">" + System.Net.WebUtility.HtmlEncode(e.Note) + "</p>");
+    sb.AppendLine(
+      "<h2>Values</h2><table><thead><tr><th>Value</th><th>Name</th><th>Description</th></tr></thead><tbody>"
+    );
+    foreach (var x in e.Values.OrderBy(x => x.Value))
+    {
+      var desc = string.IsNullOrEmpty(x.Description) ? "" : System.Net.WebUtility.HtmlEncode(x.Description);
+      sb.AppendLine(
+        $"<tr><td>{x.Value}</td><td>{System.Net.WebUtility.HtmlEncode(x.Name)}</td><td class=\"prov\">{desc}</td></tr>"
+      );
+    }
+
+    sb.AppendLine("</tbody></table>");
+    sb.AppendLine("<h2>Provenance</h2><div class=\"prov\">");
+    sb.AppendLine("<div>File: " + System.Net.WebUtility.HtmlEncode(e.FilePath) + "</div>");
+    sb.AppendLine("<div>Sources:</div><ul class=\"prov\">");
+    if (e.SourceUrls.Count == 0)
+      sb.AppendLine("<li>(none)</li>");
+    else
+      foreach (var u in e.SourceUrls)
+      {
+        var enc = System.Net.WebUtility.HtmlEncode(u);
+        if (
+          u.StartsWith("http://", StringComparison.OrdinalIgnoreCase)
+          || u.StartsWith("https://", StringComparison.OrdinalIgnoreCase)
+        )
+          sb.AppendLine($"<li><a href=\"{enc}\">{enc}</a></li>");
+        else
+          sb.AppendLine("<li>" + enc + "</li>");
+      }
+
+    sb.AppendLine("</ul></div></div></body></html>");
+    return sb.ToString();
+  }
+
   private static string RenderDocPage(DocumentDecl d, ProjectIr project)
   {
     var sb = new StringBuilder();
@@ -420,6 +524,7 @@ details.ancestor summary { cursor: pointer; font-weight: 600; }
       sb.AppendLine("<p>" + System.Net.WebUtility.HtmlEncode(d.Summary) + "</p>");
     var typeNames = project.Types.Select(t => t.Name).ToHashSet(StringComparer.Ordinal);
     var bitfieldNames = project.BitfieldTypes.Select(x => x.Name).ToHashSet(StringComparer.Ordinal);
+    var enumNames = project.EnumTypes.Select(x => x.Name).ToHashSet(StringComparer.Ordinal);
     sb.AppendLine("<h2>References</h2><ul>");
     foreach (var r in d.References)
     {
@@ -428,6 +533,8 @@ details.ancestor summary { cursor: pointer; font-weight: 600; }
         href = $"../type/{EscapeFile(r)}.html";
       else if (bitfieldNames.Contains(r))
         href = $"../bitfield/{EscapeFile(r)}.html";
+      else if (enumNames.Contains(r))
+        href = $"../enum/{EscapeFile(r)}.html";
       else
         href = "#";
       sb.AppendLine($"<li><a href=\"{href}\">{System.Net.WebUtility.HtmlEncode(r)}</a></li>");

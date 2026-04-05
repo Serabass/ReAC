@@ -25,6 +25,12 @@ public sealed class FieldDecl
 
   /// <summary>When field type was a named <c>bitfield</c> definition, its name (for docs).</summary>
   public string? BitfieldTypeName { get; init; }
+
+  /// <summary>When field type was a named <c>enum</c> definition, its name (for docs).</summary>
+  public string? EnumTypeName { get; init; }
+
+  /// <summary>Enum members when field type resolved from a named <c>enum</c>.</summary>
+  public IReadOnlyList<EnumValueDecl>? EnumValues { get; init; }
 }
 
 /// <summary>Top-level named bit layout (storage is one scalar).</summary>
@@ -35,6 +41,28 @@ public sealed class BitfieldTypeDecl
   /// <summary>Underlying scalar name, e.g. byte or uint16.</summary>
   public required string StorageName { get; init; }
   public required IReadOnlyList<FlagBitDecl> Bits { get; init; }
+  public required IReadOnlyList<string> SourceUrls { get; init; }
+  public string? Summary { get; init; }
+  public string? Note { get; init; }
+  public required string FilePath { get; init; }
+}
+
+/// <summary>One enumerator with optional human-readable description.</summary>
+public sealed class EnumValueDecl
+{
+  public required ulong Value { get; init; }
+  public required string Name { get; init; }
+  public string? Description { get; init; }
+}
+
+/// <summary>Top-level named enumeration (storage is one scalar; numeric values must fit).</summary>
+public sealed class EnumTypeDecl
+{
+  public required string Name { get; init; }
+
+  /// <summary>Underlying scalar name, e.g. byte or uint32.</summary>
+  public required string StorageName { get; init; }
+  public required IReadOnlyList<EnumValueDecl> Values { get; init; }
   public required IReadOnlyList<string> SourceUrls { get; init; }
   public string? Summary { get; init; }
   public string? Note { get; init; }
@@ -116,6 +144,7 @@ public sealed class ProjectIr
   public required IReadOnlyList<ModuleDecl> Modules { get; init; }
   public required IReadOnlyList<TypeDecl> Types { get; init; }
   public required IReadOnlyList<BitfieldTypeDecl> BitfieldTypes { get; init; }
+  public required IReadOnlyList<EnumTypeDecl> EnumTypes { get; init; }
   public required IReadOnlyList<DocumentDecl> Documents { get; init; }
 }
 

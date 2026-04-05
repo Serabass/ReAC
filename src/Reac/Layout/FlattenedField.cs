@@ -12,4 +12,6 @@ public sealed class FlattenedField
   public string? Note { get; init; }
   public IReadOnlyList<FlagBitDecl>? FlagBits { get; init; }
   public string? BitfieldTypeName { get; init; }
+  public string? EnumTypeName { get; init; }
+  public IReadOnlyList<EnumValueDecl>? EnumValues { get; init; }
 }

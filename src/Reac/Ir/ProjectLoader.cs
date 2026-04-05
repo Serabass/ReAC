@@ -59,6 +59,25 @@ public static class ProjectLoader
       }
     }
 
+    var enumMap = new Dictionary<string, EnumTypeDecl>(StringComparer.Ordinal);
+    foreach (var (path, tops) in parsedFiles)
+    {
+      foreach (var t in tops)
+      {
+        if (t is not ReTopLevel.EnumDef ed)
+          continue;
+        if (bitfieldMap.ContainsKey(ed.Name))
+          throw new InvalidOperationException(
+            $"Name '{ed.Name}' is used both as a bitfield and as an enum (see {path})"
+          );
+        var decl = ToEnumDecl(ed, path, pointerSizeForBitfields);
+        if (!enumMap.TryAdd(decl.Name, decl))
+          throw new InvalidOperationException(
+            $"Duplicate enum type '{decl.Name}' (see {path} and existing)"
+          );
+      }
+    }
+
     var modules = new List<ModuleDecl>();
     var types = new List<TypeDecl>();
     foreach (var (path, tops) in parsedFiles)
@@ -73,9 +92,11 @@ public static class ProjectLoader
             modules.Add(ToModule(m, path));
             break;
           case ReTopLevel.TypeDef td:
-            types.Add(ToType(td, path, bitfieldMap));
+            types.Add(ToType(td, path, bitfieldMap, enumMap));
             break;
           case ReTopLevel.BitfieldDef:
+            break;
+          case ReTopLevel.EnumDef:
             break;
         }
       }
@@ -102,6 +123,8 @@ public static class ProjectLoader
       .Values.OrderBy(b => b.Name, StringComparer.OrdinalIgnoreCase)
       .ToList();
 
+    var enumList = enumMap.Values.OrderBy(e => e.Name, StringComparer.OrdinalIgnoreCase).ToList();
+
     return new ProjectIr
     {
       Config = cfg,
@@ -110,6 +133,7 @@ public static class ProjectLoader
       Modules = modules,
       Types = typesWithSizes,
       BitfieldTypes = bitfieldList,
+      EnumTypes = enumList,
       Documents = documents,
     };
   }
@@ -161,6 +185,54 @@ public static class ProjectLoader
     };
   }
 
+  private static EnumTypeDecl ToEnumDecl(
+    ReTopLevel.EnumDef d,
+    string file,
+    int pointerSizeBytes
+  )
+  {
+    var maxVal = FieldSizer.MaxUnsignedValueForScalarStorage(d.StorageName, pointerSizeBytes);
+    if (maxVal is null)
+      throw new InvalidOperationException(
+        $"enum '{d.Name}': unsupported storage '{d.StorageName}' (use a fixed-size scalar: byte..uint64, float, double, pointer, etc.)"
+      );
+
+    var seenVals = new HashSet<ulong>();
+    var seenNames = new HashSet<string>(StringComparer.Ordinal);
+    var list = new List<EnumValueDecl>();
+    foreach (var (val, name, desc) in d.Values)
+    {
+      if (val > maxVal.Value)
+        throw new InvalidOperationException(
+          $"enum '{d.Name}': value {val} does not fit in storage '{d.StorageName}'"
+        );
+      if (!seenVals.Add(val))
+        throw new InvalidOperationException($"enum '{d.Name}': duplicate value {val}");
+      if (!seenNames.Add(name))
+        throw new InvalidOperationException($"enum '{d.Name}': duplicate member name '{name}'");
+
+      list.Add(
+        new EnumValueDecl
+        {
+          Value = val,
+          Name = name,
+          Description = desc,
+        }
+      );
+    }
+
+    return new EnumTypeDecl
+    {
+      Name = d.Name,
+      StorageName = d.StorageName,
+      Values = list,
+      SourceUrls = d.SourceUrls.ToList(),
+      Summary = d.Summary,
+      Note = d.Note,
+      FilePath = file,
+    };
+  }
+
   private static TargetDecl ToTarget(ReTopLevel.Target t, string file) =>
     new()
     {
@@ -185,7 +257,8 @@ public static class ProjectLoader
   private static TypeDecl ToType(
     ReTopLevel.TypeDef td,
     string file,
-    IReadOnlyDictionary<string, BitfieldTypeDecl> bitfieldMap
+    IReadOnlyDictionary<string, BitfieldTypeDecl> bitfieldMap,
+    IReadOnlyDictionary<string, EnumTypeDecl> enumMap
   )
   {
     var fieldNotes = new Dictionary<string, string>(StringComparer.Ordinal);
@@ -208,11 +281,22 @@ public static class ProjectLoader
       TypeExpr resolvedType = fl.Type;
       IReadOnlyList<FlagBitDecl>? flagBits = null;
       string? bitfieldTypeName = null;
-      if (fl.Type is TypeExpr.Named nn && bitfieldMap.TryGetValue(nn.Name, out var bfDecl))
+      string? enumTypeName = null;
+      IReadOnlyList<EnumValueDecl>? enumValues = null;
+      if (fl.Type is TypeExpr.Named nn)
       {
-        resolvedType = new TypeExpr.Scalar(CanonicalScalarForBitfieldStorage(bfDecl.StorageName));
-        flagBits = bfDecl.Bits;
-        bitfieldTypeName = nn.Name;
+        if (bitfieldMap.TryGetValue(nn.Name, out var bfDecl))
+        {
+          resolvedType = new TypeExpr.Scalar(CanonicalScalarForBitfieldStorage(bfDecl.StorageName));
+          flagBits = bfDecl.Bits;
+          bitfieldTypeName = nn.Name;
+        }
+        else if (enumMap.TryGetValue(nn.Name, out var enDecl))
+        {
+          resolvedType = new TypeExpr.Scalar(CanonicalScalarForBitfieldStorage(enDecl.StorageName));
+          enumValues = enDecl.Values;
+          enumTypeName = nn.Name;
+        }
       }
 
       fields.Add(
@@ -225,6 +309,8 @@ public static class ProjectLoader
           Provenance = null,
           FlagBits = flagBits,
           BitfieldTypeName = bitfieldTypeName,
+          EnumTypeName = enumTypeName,
+          EnumValues = enumValues,
         }
       );
     }

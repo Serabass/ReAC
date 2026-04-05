@@ -58,6 +58,8 @@ public static class LayoutEngine
             Note = f.Note,
             FlagBits = f.FlagBits,
             BitfieldTypeName = f.BitfieldTypeName,
+            EnumTypeName = f.EnumTypeName,
+            EnumValues = f.EnumValues,
           }
         );
       }

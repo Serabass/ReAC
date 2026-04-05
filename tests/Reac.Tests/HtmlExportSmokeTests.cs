@@ -42,6 +42,17 @@ public class HtmlExportSmokeTests
       var bf1 = Path.Combine(outDir, "bitfield", "CObjectObjectFlags1.html");
       Assert.True(File.Exists(bf1));
       Assert.Contains("bIsPickupObject", File.ReadAllText(bf1), StringComparison.Ordinal);
+
+      var cweapon = Path.Combine(outDir, "type", "CWeapon.html");
+      Assert.True(File.Exists(cweapon));
+      var weaponHtml = File.ReadAllText(cweapon);
+      Assert.Contains("eWeaponType", weaponHtml, StringComparison.Ordinal);
+      Assert.Contains("../enum/eWeaponType.html", weaponHtml, StringComparison.Ordinal);
+
+      var en = Path.Combine(outDir, "enum", "eWeaponType.html");
+      Assert.True(File.Exists(en));
+      Assert.Contains("WEAPON_PISTOL", File.ReadAllText(en), StringComparison.Ordinal);
+      Assert.Contains("Standard sidearm", File.ReadAllText(en), StringComparison.Ordinal);
     }
     finally
     {

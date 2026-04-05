@@ -92,4 +92,18 @@ public static class FieldSizer
     var sz = SizeOfScalar(scalarName, pointerSizeBytes);
     return sz is > 0 ? sz.Value * 8 - 1 : null;
   }
+
+  /// <summary>Maximum unsigned integer representable in this scalar width (for enum value checks).</summary>
+  public static ulong? MaxUnsignedValueForScalarStorage(string scalarName, int pointerSizeBytes)
+  {
+    var sz = SizeOfScalar(scalarName, pointerSizeBytes);
+    return sz switch
+    {
+      1 => byte.MaxValue,
+      2 => ushort.MaxValue,
+      4 => uint.MaxValue,
+      8 => ulong.MaxValue,
+      _ => null,
+    };
+  }
 }
