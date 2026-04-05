@@ -1,5 +1,5 @@
 struct CMatrix size 0x40 {
-  module Sample.Core
+  module Core.Main
   source "https://gtamods.com/wiki/Memory_Addresses_(VC)#CMatrix"
   0x000 right : CVector
   0x010 up : CVector

@@ -3,6 +3,5 @@ target example_win32 {
   game "Sample"
   version "1.0"
   platform "win32"
-  source "https://example.com/reverse/sample-memory"
-  source "https://example.com/reverse/sample-functions"
+  source "https://gtamods.com/wiki/Memory_Addresses_(VC)"
 }

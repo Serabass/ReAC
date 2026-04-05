@@ -1,3 +1,3 @@
-module Sample.Core {
+module Core.Main {
   summary "Illustrative module for REaC samples (game-agnostic tooling; data is only an example)."
 }

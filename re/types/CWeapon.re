@@ -16,9 +16,8 @@ enum eWeaponStatus : uint32 {
 }
 
 struct CWeapon size 0x18 {
-  module Sample.Core
+  module Core.Main
   source "https://gtamods.com/wiki/Memory_Addresses_(VC)#CWeapon"
-  source "https://example.com/reverse/sample-functions"
 
   fn 0x005D45E0 Fire(CEntity*, CVector*) : void // sample: main fire dispatch
   note fn Fire "Illustrative native entry; replace address/signature for your build."

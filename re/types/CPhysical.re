@@ -1,5 +1,5 @@
 class CPhysical : CEntity size 0x120 {
-  module Sample.Core
+  module Core.Main
   source "https://gtamods.com/wiki/Memory_Addresses_(VC)#CPhysical"
 
   fn 0x004B9010 GetHasCollidedWith(CEntity*) : bool

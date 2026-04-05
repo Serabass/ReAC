@@ -1,5 +1,5 @@
 class CPed : CPhysical {
-  module Sample.Core
+  module Core.Main
   source "https://gtamods.com/wiki/Memory_Addresses_(VC)#CPed"
 
   fn 0x004FF780 SetAmmo(eWeaponType, uint) : void
@@ -9,6 +9,8 @@ class CPed : CPhysical {
   static 0x94AD28 Player : CPed*
   note Player "Singleton / global; points to the active player (instance of CPed)."
 
+  0x141 fastShoot : bool
+  0x14C shoootingAnim : byte
   0x354 health : float
   note health "Current health; game scripts or natives may write this field."
 

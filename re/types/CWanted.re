@@ -10,7 +10,7 @@ bitfield eWantedActivity : byte {
 }
 
 struct CWanted size 0x24 {
-  module Sample.Core
+  module Core.Main
   source "https://gtamods.com/wiki/Memory_Addresses_(VC)#CWanted"
 
   fn 0x004D1E90 SetMaximumWantedLevel(int) : void

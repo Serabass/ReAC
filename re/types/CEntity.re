@@ -1,5 +1,5 @@
 class CEntity size 0x64 {
-  module Sample.Core
+  module Core.Main
   source "https://gtamods.com/wiki/Memory_Addresses_(VC)#CEntity"
 
   fn 0x004898B0 SetModelIndex(uint) : void

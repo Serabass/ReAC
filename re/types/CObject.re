@@ -1,7 +1,6 @@
 class CObject : CPhysical size 0x1A0 {
-  module Sample.Core
-  source "https://example.com/reverse/sample-memory"
-  source "https://example.com/reverse/sample-functions"
+  module Core.Main
+  source "https://gtamods.com/wiki/Memory_Addresses_(VC)#CObject"
 
   note "Layout follows GTAMods Memory_Addresses_(VC) CObject; matDummyInitial is 72 B in that game."
 
