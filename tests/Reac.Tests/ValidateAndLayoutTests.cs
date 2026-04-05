@@ -7,6 +7,20 @@ namespace Reac.Tests;
 public class ValidateAndLayoutTests
 {
   [Fact]
+  public void CPed_has_static_Player_field()
+  {
+    var root = TestPaths.RepoRoot();
+    var ir = ProjectLoader.Load(root);
+    var ped = ir.Types.First(t => t.Name == "CPed");
+    var player = ped.OwnFields.First(x => x.Name == "Player");
+    Assert.True(player.IsStatic);
+    Assert.Equal(0x94AD28UL, player.StaticAddress);
+    Assert.IsType<TypeExpr.Pointer>(player.Type);
+    var layout = LayoutEngine.BuildLayouts(ir, 4)["CPed"];
+    Assert.DoesNotContain(layout.Flattened, x => x.Name == "Player");
+  }
+
+  [Fact]
   public void CObject_flag_fields_have_bitfield_metadata()
   {
     var root = TestPaths.RepoRoot();

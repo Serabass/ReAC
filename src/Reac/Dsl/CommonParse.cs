@@ -1,3 +1,4 @@
+using System.Globalization;
 using Sprache;
 
 namespace Reac.Dsl;
@@ -23,6 +24,14 @@ internal static class CommonParse
       from _ in Parse.IgnoreCase("0x")
       from digits in Parse.Regex(@"[0-9a-fA-F]+")
       select Convert.ToInt32(digits, 16)
+    );
+
+  /// <summary>Hex literal for static addresses (full 64-bit range).</summary>
+  internal static Parser<ulong> HexULong { get; } =
+    Tok(
+      from _ in Parse.IgnoreCase("0x")
+      from digits in Parse.Regex(@"[0-9a-fA-F]+")
+      select ulong.Parse(digits, NumberStyles.HexNumber, CultureInfo.InvariantCulture)
     );
 }
 

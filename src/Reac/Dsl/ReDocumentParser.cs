@@ -14,6 +14,11 @@ public static class ReDocumentParser
     RegexOptions.Compiled | RegexOptions.CultureInvariant
   );
 
+  private static readonly Regex StaticFieldLineRegex = new(
+    @"^static\s+(0x[0-9a-fA-F]+)\s+([A-Za-z_][A-Za-z0-9_]*)\s*:\s*(.+)$",
+    RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.IgnoreCase
+  );
+
   public static IReadOnlyList<ReTopLevel> ParseDocument(string text)
   {
     var i = 0;
@@ -515,18 +520,67 @@ public static class ReDocumentParser
 
       lineStart = ni;
 
+      var workLine = line;
+      string? inlineSlashNote = null;
+      {
+        var cmt = workLine.IndexOf("//", StringComparison.Ordinal);
+        if (cmt >= 0)
+        {
+          inlineSlashNote = workLine[(cmt + 2)..].Trim();
+          workLine = workLine[..cmt].Trim();
+        }
+      }
+
       try
       {
-        var parsed = ReLineParsers.FieldLine.End().Parse(line);
-        lines.Add(new ReBodyLine.FieldLine(parsed.Offset, parsed.Name, parsed.Type, null));
+        var sp = ReLineParsers.StaticFieldLine.End().Parse(workLine);
+        lines.Add(new ReBodyLine.StaticFieldLine(sp.Address, sp.Name, sp.Type, inlineSlashNote));
         continue;
       }
       catch (Exception)
       {
-        if (TryParseFieldLineRegex(line, out var off, out var nm, out var typ))
+        // try instance field
+      }
+
+      if (
+        TryParseStaticFieldLineRegex(
+          workLine,
+          out var stAddr,
+          out var stName,
+          out var stTyp
+        )
+      )
+      {
+        lines.Add(
+          new ReBodyLine.StaticFieldLine(
+            stAddr,
+            stName,
+            TypeExprParser.Parse(StripLineComment(stTyp)),
+            inlineSlashNote
+          )
+        );
+        continue;
+      }
+
+      try
+      {
+        var parsed = ReLineParsers.FieldLine.End().Parse(workLine);
+        lines.Add(
+          new ReBodyLine.FieldLine(parsed.Offset, parsed.Name, parsed.Type, inlineSlashNote)
+        );
+        continue;
+      }
+      catch (Exception)
+      {
+        if (TryParseFieldLineRegex(workLine, out var off, out var nm, out var typ))
         {
           lines.Add(
-            new ReBodyLine.FieldLine(off, nm, TypeExprParser.Parse(StripLineComment(typ)), null)
+            new ReBodyLine.FieldLine(
+              off,
+              nm,
+              TypeExprParser.Parse(StripLineComment(typ)),
+              inlineSlashNote
+            )
           );
           continue;
         }
@@ -686,6 +740,29 @@ public static class ReDocumentParser
     }
 
     fl = new ReBodyLine.FunctionLine(address, name, parameters, retType, inlineNote);
+    return true;
+  }
+
+  private static bool TryParseStaticFieldLineRegex(
+    string line,
+    out ulong address,
+    out string name,
+    out string typeRest
+  )
+  {
+    address = 0;
+    name = "";
+    typeRest = "";
+    var m = StaticFieldLineRegex.Match(line.Trim());
+    if (!m.Success)
+      return false;
+    address = ulong.Parse(
+      m.Groups[1].Value.AsSpan(2),
+      NumberStyles.HexNumber,
+      CultureInfo.InvariantCulture
+    );
+    name = m.Groups[2].Value;
+    typeRest = m.Groups[3].Value.Trim();
     return true;
   }
 

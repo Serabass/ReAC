@@ -46,6 +46,8 @@ public static class LayoutEngine
       var decl = typeMap[name];
       foreach (var f in decl.OwnFields)
       {
+        if (f.IsStatic)
+          continue;
         var (indet, _) = FieldSizer.TryGetSpan(f.Type, typeMap, pointerSize);
         flat.Add(
           new FlattenedField

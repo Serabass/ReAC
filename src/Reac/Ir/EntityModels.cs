@@ -14,6 +14,12 @@ public sealed class FlagBitDecl
 
 public sealed class FieldDecl
 {
+  /// <summary>When false, byte offset in the instance. When true, <see cref="Offset"/> is unused (0).</summary>
+  public bool IsStatic { get; init; }
+
+  /// <summary>Absolute address in the module image (static/global); set when <see cref="IsStatic"/>.</summary>
+  public ulong? StaticAddress { get; init; }
+
   public required int Offset { get; init; }
   public required string Name { get; init; }
   public required TypeExpr Type { get; init; }

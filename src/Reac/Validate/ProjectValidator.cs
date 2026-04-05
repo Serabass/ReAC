@@ -102,6 +102,8 @@ public static class ProjectValidator
         {
           foreach (var f in t.OwnFields)
           {
+            if (f.IsStatic)
+              continue;
             if (f.Offset < parent.Size)
               issues.Add(
                 new ValidationIssue
@@ -116,9 +118,22 @@ public static class ProjectValidator
       }
 
       var ownOffsets = new HashSet<int>();
+      var ownStaticAddresses = new HashSet<ulong>();
       foreach (var f in t.OwnFields)
       {
-        if (!ownOffsets.Add(f.Offset))
+        if (f.IsStatic)
+        {
+          if (f.StaticAddress is { } sa && !ownStaticAddresses.Add(sa))
+            issues.Add(
+              new ValidationIssue
+              {
+                IsError = true,
+                Message =
+                  $"Type '{t.Name}': duplicate static address 0x{sa:X} in own fields",
+              }
+            );
+        }
+        else if (!ownOffsets.Add(f.Offset))
           issues.Add(
             new ValidationIssue
             {

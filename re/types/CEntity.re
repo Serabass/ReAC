@@ -1,7 +1,6 @@
 class CEntity size 0x64 {
   module Sample.Core
-  source "https://example.com/reverse/sample-memory"
-  source "https://example.com/reverse/sample-functions"
+  source "https://gtamods.com/wiki/Memory_Addresses_(VC)#CEntity"
 
   fn 0x004898B0 SetModelIndex(uint) : void
   note fn SetModelIndex "Sets render/collision model index (sample)."

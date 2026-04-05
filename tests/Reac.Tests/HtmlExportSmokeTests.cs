@@ -27,6 +27,9 @@ public class HtmlExportSmokeTests
       var cped = Path.Combine(outDir, "type", "CPed.html");
       Assert.True(File.Exists(cped));
       var pedHtml = File.ReadAllText(cped);
+      Assert.Contains("Static fields", pedHtml, StringComparison.Ordinal);
+      Assert.Contains("0x94AD28", pedHtml, StringComparison.Ordinal);
+      Assert.Contains("Player", pedHtml, StringComparison.Ordinal);
       Assert.Contains("Inheritance", pedHtml, StringComparison.OrdinalIgnoreCase);
       Assert.Contains("Provenance", pedHtml, StringComparison.OrdinalIgnoreCase);
       Assert.Contains("Ancestor types", pedHtml, StringComparison.Ordinal);
@@ -51,8 +54,9 @@ public class HtmlExportSmokeTests
 
       var en = Path.Combine(outDir, "enum", "eWeaponType.html");
       Assert.True(File.Exists(en));
-      Assert.Contains("WEAPON_PISTOL", File.ReadAllText(en), StringComparison.Ordinal);
-      Assert.Contains("Standard sidearm", File.ReadAllText(en), StringComparison.Ordinal);
+      var enumHtml = File.ReadAllText(en);
+      Assert.Contains("pistol", enumHtml, StringComparison.Ordinal);
+      Assert.Contains("Standard sidearm", enumHtml, StringComparison.Ordinal);
     }
     finally
     {

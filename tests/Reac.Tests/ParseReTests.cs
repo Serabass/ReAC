@@ -6,6 +6,31 @@ namespace Reac.Tests;
 public class ParseReTests
 {
   [Fact]
+  public void Parse_static_field_absolute_address()
+  {
+    const string src = """
+      class CPed : CPhysical {
+        module Sample.Core
+        static 0x94AD28 Player : CPed* // global
+        note Player "doc note wins over slash comment"
+        0x10 health : float
+      }
+      """;
+    var doc = ReDocumentParser.ParseDocument(src);
+    var td = Assert.IsType<ReTopLevel.TypeDef>(Assert.Single(doc));
+    var lines = td.Body.ToList();
+    var st = Assert.IsType<ReBodyLine.StaticFieldLine>(lines[1]);
+    Assert.Equal(0x94AD28UL, st.Address);
+    Assert.Equal("Player", st.Name);
+    Assert.IsType<TypeExpr.Pointer>(st.Type);
+    Assert.Equal("global", st.Note);
+    var notePlayer = Assert.IsType<ReBodyLine.NoteFieldLine>(lines[2]);
+    Assert.Equal("Player", notePlayer.FieldName);
+    var fl = Assert.IsType<ReBodyLine.FieldLine>(lines[3]);
+    Assert.Equal(0x10, fl.Offset);
+  }
+
+  [Fact]
   public void ParseFieldLine_pointer_and_inheritance()
   {
     const string src = """

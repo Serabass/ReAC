@@ -21,6 +21,7 @@ table { width: 100%; border-collapse: collapse; font-size: 0.92rem; margin: 0.5r
 th, td { border: 1px solid #cfd6dd; padding: 0.45rem 0.65rem; vertical-align: top; }
 th { background: #e9eef4; font-weight: 600; text-align: left; }
 tbody tr:nth-child(even) { background: #fafbfc; }
+tr.static-field td { background: #eef2f8; }
 .prov { font-size: 0.88rem; color: #5c6570; }
 h1 { font-size: 1.65rem; font-weight: 600; margin: 0 0 1rem; line-height: 1.25; }
 h2 { font-size: 1.15rem; margin: 1.75rem 0 0.75rem; padding-bottom: 0.35rem; border-bottom: 1px solid #dee3e9; }
@@ -205,7 +206,7 @@ details.ancestor summary { cursor: pointer; font-weight: 600; }
         sb.AppendLine(
           "<table><thead><tr><th>Off</th><th>Name</th><th>Type</th><th>Note</th></tr></thead><tbody>"
         );
-        foreach (var f in anc.OwnFields)
+        foreach (var f in anc.OwnFields.Where(x => !x.IsStatic))
         {
           var n = FormatFieldNoteCell(f.Note, f.FlagBits, f.EnumValues);
           var typeCell = FieldTypeHtml(f.Type, f.BitfieldTypeName, f.EnumTypeName, depth: 1);
@@ -214,9 +215,77 @@ details.ancestor summary { cursor: pointer; font-weight: 600; }
           );
         }
 
-        sb.AppendLine("</tbody></table></details>");
+        sb.AppendLine("</tbody></table>");
+        var ancStatics = anc.OwnFields.Where(x => x.IsStatic).ToList();
+        if (ancStatics.Count > 0)
+        {
+          sb.AppendLine("<p class=\"prov\"><strong>Static</strong> (module address)</p>");
+          sb.AppendLine(
+            "<table><thead><tr><th>Address</th><th>Name</th><th>Type</th><th>Note</th></tr></thead><tbody>"
+          );
+          foreach (var f in ancStatics)
+          {
+            var n = FormatFieldNoteCell(f.Note, f.FlagBits, f.EnumValues);
+            var typeCell = FieldTypeHtml(f.Type, f.BitfieldTypeName, f.EnumTypeName, depth: 1);
+            var addr = f.StaticAddress ?? 0;
+            sb.AppendLine(
+              $"<tr><td>0x{addr:X}</td><td>{System.Net.WebUtility.HtmlEncode(f.Name)}</td><td>{typeCell}</td><td class=\"prov\">{n}</td></tr>"
+            );
+          }
+
+          sb.AppendLine("</tbody></table>");
+        }
+
+        sb.AppendLine("</details>");
       }
     }
+
+    sb.AppendLine(
+      "<h2>Own fields</h2><table><thead><tr><th>Off</th><th>Name</th><th>Type</th><th>Note</th></tr></thead><tbody>"
+    );
+    foreach (var f in layout.OwnFields.Where(x => !x.IsStatic))
+    {
+      var noteCell = FormatFieldNoteCell(f.Note, f.FlagBits, f.EnumValues);
+      var typeCell = FieldTypeHtml(f.Type, f.BitfieldTypeName, f.EnumTypeName, depth: 1);
+      sb.AppendLine(
+        $"<tr><td>0x{f.Offset:X}</td><td>{System.Net.WebUtility.HtmlEncode(f.Name)}</td><td>{typeCell}</td><td class=\"prov\">{noteCell}</td></tr>"
+      );
+    }
+
+    sb.AppendLine("</tbody></table>");
+
+    var staticInHierarchy = chain
+      .Select(tn => typeMap.TryGetValue(tn, out var d) ? d : null)
+      .Where(d => d != null)
+      .SelectMany(d => d!.OwnFields.Where(f => f.IsStatic))
+      .ToList();
+    if (staticInHierarchy.Count > 0)
+    {
+      sb.AppendLine("<h2 id=\"static-fields\">Static fields</h2>");
+      sb.AppendLine(
+        "<p class=\"prov\">Absolute addresses in the module image (globals / singletons), not offsets inside an instance.</p>"
+      );
+      sb.AppendLine(
+        "<table><thead><tr><th>Address</th><th>Declaring type</th><th>Name</th><th>Type</th><th>Note</th></tr></thead><tbody>"
+      );
+      foreach (var typeName in chain)
+      {
+        if (!typeMap.TryGetValue(typeName, out var decl))
+          continue;
+        foreach (var f in decl.OwnFields.Where(x => x.IsStatic))
+        {
+          var noteCell = FormatFieldNoteCell(f.Note, f.FlagBits, f.EnumValues);
+          var typeCell = FieldTypeHtml(f.Type, f.BitfieldTypeName, f.EnumTypeName, depth: 1);
+          var addr = f.StaticAddress ?? 0;
+          sb.AppendLine(
+            $"<tr><td>0x{addr:X}</td><td>{System.Net.WebUtility.HtmlEncode(typeName)}</td><td>{System.Net.WebUtility.HtmlEncode(f.Name)}</td><td>{typeCell}</td><td class=\"prov\">{noteCell}</td></tr>"
+          );
+        }
+      }
+
+      sb.AppendLine("</tbody></table>");
+    }
+
     sb.AppendLine("<h2>Provenance</h2><div class=\"prov\">");
     sb.AppendLine("<div>File: " + System.Net.WebUtility.HtmlEncode(t.FilePath) + "</div>");
     sb.AppendLine("<div>Sources:</div><ul class=\"prov\">");
@@ -237,20 +306,6 @@ details.ancestor summary { cursor: pointer; font-weight: 600; }
 
     sb.AppendLine("</ul>");
     sb.AppendLine("</div>");
-
-    sb.AppendLine(
-      "<h2>Own fields</h2><table><thead><tr><th>Off</th><th>Name</th><th>Type</th><th>Note</th></tr></thead><tbody>"
-    );
-    foreach (var f in layout.OwnFields)
-    {
-      var noteCell = FormatFieldNoteCell(f.Note, f.FlagBits, f.EnumValues);
-      var typeCell = FieldTypeHtml(f.Type, f.BitfieldTypeName, f.EnumTypeName, depth: 1);
-      sb.AppendLine(
-        $"<tr><td>0x{f.Offset:X}</td><td>{System.Net.WebUtility.HtmlEncode(f.Name)}</td><td>{typeCell}</td><td class=\"prov\">{noteCell}</td></tr>"
-      );
-    }
-
-    sb.AppendLine("</tbody></table>");
 
     sb.AppendLine("<h2>Native functions</h2>");
     var hasAnyFn = false;
@@ -283,7 +338,10 @@ details.ancestor summary { cursor: pointer; font-weight: 600; }
       sb.AppendLine("<p class=\"prov\">(none declared)</p>");
 
     sb.AppendLine(
-      "<h2>Flattened layout</h2><table><thead><tr><th>Off</th><th>Name</th><th>Type</th><th>Declaring</th><th>Layout</th></tr></thead><tbody>"
+      "<h2>Flattened layout</h2><p class=\"prov\">Instance members by offset; static globals from the same inheritance chain are appended below.</p>"
+    );
+    sb.AppendLine(
+      "<table><thead><tr><th>Off / address</th><th>Name</th><th>Type</th><th>Declaring</th><th>Layout</th></tr></thead><tbody>"
     );
     foreach (var ff in layout.Flattened)
     {
@@ -291,6 +349,20 @@ details.ancestor summary { cursor: pointer; font-weight: 600; }
       sb.AppendLine(
         $"<tr><td>0x{ff.Offset:X}</td><td>{System.Net.WebUtility.HtmlEncode(ff.Name)}</td><td>{typeCell}</td><td>{System.Net.WebUtility.HtmlEncode(ff.DeclaringTypeName)}</td><td>{(ff.Indeterminate ? "indeterminate" : "")}</td></tr>"
       );
+    }
+
+    foreach (var typeName in chain)
+    {
+      if (!typeMap.TryGetValue(typeName, out var declSt))
+        continue;
+      foreach (var sf in declSt.OwnFields.Where(x => x.IsStatic))
+      {
+        var typeCell = FieldTypeHtml(sf.Type, sf.BitfieldTypeName, sf.EnumTypeName, depth: 1);
+        var addr = sf.StaticAddress ?? 0;
+        sb.AppendLine(
+          $"<tr class=\"static-field\"><td><code>static 0x{addr:X}</code></td><td>{System.Net.WebUtility.HtmlEncode(sf.Name)}</td><td>{typeCell}</td><td>{System.Net.WebUtility.HtmlEncode(typeName)}</td><td class=\"prov\">module global</td></tr>"
+        );
+      }
     }
 
     sb.AppendLine("</tbody></table>");
@@ -309,6 +381,19 @@ details.ancestor summary { cursor: pointer; font-weight: 600; }
         sb.AppendLine(
           $"<tr><td>0x{ff.Offset:X}</td><td>{System.Net.WebUtility.HtmlEncode(ff.Name)}</td><td>{typeCell}</td><td class=\"prov\">{noteBits}</td></tr>"
         );
+      }
+
+      if (typeMap.TryGetValue(g.Key, out var declForGroup))
+      {
+        foreach (var sf in declForGroup.OwnFields.Where(x => x.IsStatic))
+        {
+          var noteBits = FormatFieldNoteCell(sf.Note, sf.FlagBits, sf.EnumValues);
+          var typeCell = FieldTypeHtml(sf.Type, sf.BitfieldTypeName, sf.EnumTypeName, depth: 1);
+          var addr = sf.StaticAddress ?? 0;
+          sb.AppendLine(
+            $"<tr><td class=\"prov\">static 0x{addr:X}</td><td>{System.Net.WebUtility.HtmlEncode(sf.Name)}</td><td>{typeCell}</td><td class=\"prov\">{noteBits}</td></tr>"
+          );
+        }
       }
 
       sb.AppendLine("</tbody></table>");

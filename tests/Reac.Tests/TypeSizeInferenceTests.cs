@@ -31,6 +31,8 @@ public class TypeSizeInferenceTests
       [
         new FieldDecl
         {
+          IsStatic = false,
+          StaticAddress = null,
           Offset = 20,
           Name = "z",
           Type = new TypeExpr.Scalar("uint32"),

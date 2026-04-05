@@ -274,16 +274,23 @@ public static class ProjectLoader
     var fields = new List<FieldDecl>();
     foreach (var line in td.Body)
     {
-      if (line is not ReBodyLine.FieldLine fl)
+      if (line is not ReBodyLine.FieldLine && line is not ReBodyLine.StaticFieldLine)
         continue;
 
-      var mergedNote = fl.Note ?? (fieldNotes.TryGetValue(fl.Name, out var nt) ? nt : null);
-      TypeExpr resolvedType = fl.Type;
+      var isStatic = line is ReBodyLine.StaticFieldLine;
+      var fl = line as ReBodyLine.FieldLine;
+      var sf = line as ReBodyLine.StaticFieldLine;
+      var fieldName = fl?.Name ?? sf!.Name;
+      var rawType = fl?.Type ?? sf!.Type;
+
+      var mergedNote =
+        (fieldNotes.TryGetValue(fieldName, out var nt) ? nt : null) ?? (fl?.Note ?? sf?.Note);
+      TypeExpr resolvedType = rawType;
       IReadOnlyList<FlagBitDecl>? flagBits = null;
       string? bitfieldTypeName = null;
       string? enumTypeName = null;
       IReadOnlyList<EnumValueDecl>? enumValues = null;
-      if (fl.Type is TypeExpr.Named nn)
+      if (rawType is TypeExpr.Named nn)
       {
         if (bitfieldMap.TryGetValue(nn.Name, out var bfDecl))
         {
@@ -302,8 +309,10 @@ public static class ProjectLoader
       fields.Add(
         new FieldDecl
         {
-          Offset = fl.Offset,
-          Name = fl.Name,
+          IsStatic = isStatic,
+          StaticAddress = isStatic ? sf!.Address : null,
+          Offset = fl?.Offset ?? 0,
+          Name = fieldName,
           Type = resolvedType,
           Note = mergedNote,
           Provenance = null,

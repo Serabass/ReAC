@@ -62,6 +62,10 @@ public abstract record ReBodyLine
 
   public sealed record FieldLine(int Offset, string Name, TypeExpr Type, string? Note) : ReBodyLine;
 
+  /// <summary>Global/static at absolute address (not an instance offset).</summary>
+  public sealed record StaticFieldLine(ulong Address, string Name, TypeExpr Type, string? Note)
+    : ReBodyLine;
+
   public sealed record NoteFieldLine(string FieldName, string Text) : ReBodyLine;
 
   /// <param name="Parameters">Comma-separated parameter types as in C++ (opaque text).</param>

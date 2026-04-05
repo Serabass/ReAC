@@ -66,6 +66,8 @@ public static class TypeSizeInference
       var decl = typeMap[typeName];
       foreach (var f in decl.OwnFields)
       {
+        if (f.IsStatic)
+          continue;
         var (indet, sp) = FieldSizer.TryGetSpanWithEffectiveSizes(
           f.Type,
           typeMap,
