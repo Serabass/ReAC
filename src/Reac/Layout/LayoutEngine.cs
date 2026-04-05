@@ -4,7 +4,10 @@ namespace Reac.Layout;
 
 public static class LayoutEngine
 {
-  public static IReadOnlyList<string> GetInheritanceChain(TypeDecl t, IReadOnlyDictionary<string, TypeDecl> typeMap)
+  public static IReadOnlyList<string> GetInheritanceChain(
+    TypeDecl t,
+    IReadOnlyDictionary<string, TypeDecl> typeMap
+  )
   {
     var chain = new List<string>();
     TypeDecl? cur = t;
@@ -17,7 +20,10 @@ public static class LayoutEngine
     return chain;
   }
 
-  public static IReadOnlyDictionary<string, TypeLayout> BuildLayouts(ProjectIr project, int pointerSizeBytes)
+  public static IReadOnlyDictionary<string, TypeLayout> BuildLayouts(
+    ProjectIr project,
+    int pointerSizeBytes
+  )
   {
     var typeMap = project.Types.ToDictionary(t => t.Name, StringComparer.Ordinal);
     var result = new Dictionary<string, TypeLayout>(StringComparer.Ordinal);
@@ -26,7 +32,11 @@ public static class LayoutEngine
     return result;
   }
 
-  private static TypeLayout BuildOne(TypeDecl t, Dictionary<string, TypeDecl> typeMap, int pointerSize)
+  private static TypeLayout BuildOne(
+    TypeDecl t,
+    Dictionary<string, TypeDecl> typeMap,
+    int pointerSize
+  )
   {
     var chain = GetInheritanceChain(t, typeMap).ToList();
 
@@ -37,17 +47,19 @@ public static class LayoutEngine
       foreach (var f in decl.OwnFields)
       {
         var (indet, _) = FieldSizer.TryGetSpan(f.Type, typeMap, pointerSize);
-        flat.Add(new FlattenedField
-        {
-          Offset = f.Offset,
-          Name = f.Name,
-          Type = f.Type,
-          DeclaringTypeName = name,
-          Indeterminate = indet,
-          Note = f.Note,
-          FlagBits = f.FlagBits,
-          BitfieldTypeName = f.BitfieldTypeName
-        });
+        flat.Add(
+          new FlattenedField
+          {
+            Offset = f.Offset,
+            Name = f.Name,
+            Type = f.Type,
+            DeclaringTypeName = name,
+            Indeterminate = indet,
+            Note = f.Note,
+            FlagBits = f.FlagBits,
+            BitfieldTypeName = f.BitfieldTypeName,
+          }
+        );
       }
     }
 
@@ -58,7 +70,7 @@ public static class LayoutEngine
       Name = t.Name,
       InheritanceChain = chain,
       Flattened = flat,
-      OwnFields = t.OwnFields.ToList()
+      OwnFields = t.OwnFields.ToList(),
     };
   }
 }
