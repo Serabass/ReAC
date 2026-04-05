@@ -2,7 +2,7 @@ namespace Reac;
 
 internal static class InitFiles
 {
-    internal const string ProjectToml = """
+  internal const string ProjectToml = """
 name = "reknow-dda"
 version = "0.1.0"
 active_target = "example_win32"
@@ -15,25 +15,25 @@ docs_dir = "docs"
 generated_dir = "generated"
 """;
 
-    internal static readonly (string Path, string Content)[] AllFiles =
-    [
-        ("targets/example_win32.re", TargetRe),
-        ("modules/Sample.Core.re", ModuleSample),
-        ("modules/RenderWare.Core.re", ModuleRw),
-        ("types/CVector.re", CVector),
-        ("types/CMatrix.re", CMatrix),
-        ("types/CWeapon.re", CWeapon),
-        ("types/CWanted.re", CWanted),
-        ("types/CEntity.re", CEntity),
-        ("types/CPhysical.re", CPhysical),
-        ("types/CObjectFlags.re", CObjectFlags),
-        ("types/CObject.re", CObject),
-        ("types/CPed.re", CPed),
-        ("docs/Overview.rdoc", OverviewRdoc),
-        ("docs/Sample_Memory_Model.rdoc", MemoryModelRdoc)
-    ];
+  internal static readonly (string Path, string Content)[] AllFiles =
+  [
+    ("targets/example_win32.re", TargetRe),
+    ("modules/Sample.Core.re", ModuleSample),
+    ("modules/RenderWare.Core.re", ModuleRw),
+    ("types/CVector.re", CVector),
+    ("types/CMatrix.re", CMatrix),
+    ("types/CWeapon.re", CWeapon),
+    ("types/CWanted.re", CWanted),
+    ("types/CEntity.re", CEntity),
+    ("types/CPhysical.re", CPhysical),
+    ("types/CObjectFlags.re", CObjectFlags),
+    ("types/CObject.re", CObject),
+    ("types/CPed.re", CPed),
+    ("docs/Overview.rdoc", OverviewRdoc),
+    ("docs/Sample_Memory_Model.rdoc", MemoryModelRdoc),
+  ];
 
-    private const string TargetRe = """
+  private const string TargetRe = """
 target example_win32 {
   pointer_size_bytes 4
   game "Sample"
@@ -44,19 +44,19 @@ target example_win32 {
 }
 """;
 
-    private const string ModuleSample = """
+  private const string ModuleSample = """
 module Sample.Core {
   summary "Illustrative module for REaC samples (game-agnostic tooling; data is only an example)."
 }
 """;
 
-    private const string ModuleRw = """
+  private const string ModuleRw = """
 module RenderWare.Core {
   summary "Third-party engine placeholders (optional; rename or remove in your KB)."
 }
 """;
 
-    private const string CVector = """
+  private const string CVector = """
 struct CVector size 0x0C {
   module Sample.Core
   source "https://example.com/reverse/sample-memory"
@@ -67,7 +67,7 @@ struct CVector size 0x0C {
 }
 """;
 
-    private const string CMatrix = """
+  private const string CMatrix = """
 struct CMatrix size 0x40 {
   module Sample.Core
   source "https://example.com/reverse/sample-memory"
@@ -79,7 +79,7 @@ struct CMatrix size 0x40 {
 }
 """;
 
-    private const string CWeapon = """
+  private const string CWeapon = """
 struct CWeapon size 0x18 {
   module Sample.Core
   source "https://example.com/reverse/sample-memory"
@@ -93,7 +93,7 @@ struct CWeapon size 0x18 {
 }
 """;
 
-    private const string CWanted = """
+  private const string CWanted = """
 struct CWanted size 0x24 {
   module Sample.Core
   source "https://example.com/reverse/sample-memory"
@@ -106,7 +106,7 @@ struct CWanted size 0x24 {
 }
 """;
 
-    private const string CEntity = """
+  private const string CEntity = """
 class CEntity size 0x64 {
   module Sample.Core
   source "https://example.com/reverse/sample-memory"
@@ -132,7 +132,7 @@ class CEntity size 0x64 {
 }
 """;
 
-    private const string CPhysical = """
+  private const string CPhysical = """
 class CPhysical : CEntity size 0x120 {
   module Sample.Core
   source "https://example.com/reverse/sample-memory"
@@ -157,7 +157,7 @@ class CPhysical : CEntity size 0x120 {
 }
 """;
 
-    private const string CObjectFlags = """
+  private const string CObjectFlags = """
 bitfield CObjectObjectFlags1 : byte {
   source "https://gtamods.com/wiki/Memory_Addresses_(VC)#CObject"
   summary "First object flags byte (VC); names from GTAMods wiki."
@@ -180,7 +180,7 @@ bitfield CObjectObjectFlags2 : byte {
 
 """;
 
-    private const string CObject = """
+  private const string CObject = """
 class CObject : CPhysical size 0x1A0 {
   module Sample.Core
   source "https://example.com/reverse/sample-memory"
@@ -212,7 +212,7 @@ class CObject : CPhysical size 0x1A0 {
 }
 """;
 
-    private const string CPed = """
+  private const string CPed = """
 class CPed : CPhysical {
   module Sample.Core
   source "https://example.com/reverse/sample-memory"
@@ -231,7 +231,7 @@ class CPed : CPhysical {
 }
 """;
 
-    private const string OverviewRdoc = """
+  private const string OverviewRdoc = """
 document Overview {
   title "Overview"
   summary "REaC stores reverse-engineering knowledge as text: types, targets, modules, and documents. This repo includes an illustrative sample KB."
@@ -245,7 +245,7 @@ document Overview {
 }
 """;
 
-    private const string MemoryModelRdoc = """
+  private const string MemoryModelRdoc = """
 document Sample_Memory_Model {
   title "Sample memory model (illustrative)"
   references {
