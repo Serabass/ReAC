@@ -17,4 +17,5 @@ class CPed : CPhysical {
   0x408 weapons : CWeapon[10]
   0x508 targetedPed : CPed*
   0x5F4 wanted : CWanted*
+  0xFFF x : uint8
 }
