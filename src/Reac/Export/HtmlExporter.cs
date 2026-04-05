@@ -103,11 +103,7 @@ details.ancestor summary { cursor: pointer; font-weight: 600; }
     Directory.CreateDirectory(docDir);
     foreach (var d in project.Documents)
     {
-      var html = RenderDocPage(
-        d,
-        project,
-        BuildSidebarNav(project, "../", "doc", d.Id)
-      );
+      var html = RenderDocPage(d, project, BuildSidebarNav(project, "../", "doc", d.Id));
       File.WriteAllText(Path.Combine(docDir, EscapeFile(d.Id) + ".html"), html, Encoding.UTF8);
     }
 
@@ -159,7 +155,9 @@ details.ancestor summary { cursor: pointer; font-weight: 600; }
 
     var sb = new StringBuilder();
     sb.AppendLine("<nav class=\"sidebar\" aria-label=\"Site\">");
-    sb.AppendLine($"<p class=\"sidebar-home\"><a href=\"{System.Net.WebUtility.HtmlEncode($"{hrefPrefix}index.html")}\">REaC</a></p>");
+    sb.AppendLine(
+      $"<p class=\"sidebar-home\"><a href=\"{System.Net.WebUtility.HtmlEncode($"{hrefPrefix}index.html")}\">REaC</a></p>"
+    );
     sb.AppendLine("<h3>Types</h3><ul class=\"nav-types-root\">");
     AppendTypeInheritanceTree(sb, project, hrefPrefix, highlightKind, highlightId);
     sb.AppendLine("</ul><h3>Bitfield types</h3><ul>");
@@ -206,8 +204,8 @@ details.ancestor summary { cursor: pointer; font-weight: 600; }
     foreach (var kv in childrenByParent)
       kv.Value.Sort(StringComparer.OrdinalIgnoreCase);
 
-    var roots = project.Types
-      .Where(t => string.IsNullOrEmpty(t.ParentName) || !inProject.Contains(t.ParentName!))
+    var roots = project
+      .Types.Where(t => string.IsNullOrEmpty(t.ParentName) || !inProject.Contains(t.ParentName!))
       .Select(t => t.Name)
       .Distinct()
       .OrderBy(x => x, StringComparer.OrdinalIgnoreCase)
@@ -478,7 +476,7 @@ details.ancestor summary { cursor: pointer; font-weight: 600; }
           u.StartsWith("http://", StringComparison.OrdinalIgnoreCase)
           || u.StartsWith("https://", StringComparison.OrdinalIgnoreCase)
         )
-          sb.AppendLine($"<li><a href=\"{enc}\">{enc}</a></li>");
+          sb.AppendLine($"<li><a href=\"{enc}\" target=\"_blank\">{enc}</a></li>");
         else
           sb.AppendLine("<li>" + enc + "</li>");
       }
@@ -751,7 +749,9 @@ details.ancestor summary { cursor: pointer; font-weight: 600; }
     );
     foreach (var x in e.Values.OrderBy(x => x.Value))
     {
-      var desc = string.IsNullOrEmpty(x.Description) ? "" : System.Net.WebUtility.HtmlEncode(x.Description);
+      var desc = string.IsNullOrEmpty(x.Description)
+        ? ""
+        : System.Net.WebUtility.HtmlEncode(x.Description);
       sb.AppendLine(
         $"<tr><td>{x.Value}</td><td>{System.Net.WebUtility.HtmlEncode(x.Name)}</td><td class=\"prov\">{desc}</td></tr>"
       );
