@@ -37,7 +37,11 @@ nav.sidebar h3 { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 
   margin: 1.25rem 0 0.5rem; font-weight: 700; }
 nav.sidebar h3:first-child { margin-top: 0; }
 nav.sidebar ul { list-style: none; padding: 0; margin: 0 0 1rem; }
+nav.sidebar ul.nav-types-root { padding-left: 0; margin-bottom: 1rem; }
 nav.sidebar li { margin: 0.2rem 0; word-break: break-word; }
+nav.sidebar ul.nav-tree { list-style: none; margin: 0.3rem 0 0.4rem 0; padding: 0 0 0 0.85rem;
+  border-left: 1px solid #dee3e9; }
+nav.sidebar ul.nav-tree > li { margin: 0.18rem 0; }
 main.index-main { flex: 1; padding: 1.75rem 2rem; min-width: 0; }
 main.index-main > p.lead { color: #5c6570; margin-top: 0; max-width: 52ch; }
 main.page-main { flex: 1; min-width: 0; background: #fff; }
@@ -156,9 +160,8 @@ details.ancestor summary { cursor: pointer; font-weight: 600; }
     var sb = new StringBuilder();
     sb.AppendLine("<nav class=\"sidebar\" aria-label=\"Site\">");
     sb.AppendLine($"<p class=\"sidebar-home\"><a href=\"{System.Net.WebUtility.HtmlEncode($"{hrefPrefix}index.html")}\">REaC</a></p>");
-    sb.AppendLine("<h3>Types</h3><ul>");
-    foreach (var t in project.Types.OrderBy(x => x.Name))
-      sb.AppendLine(Li("type", t.Name, t.Name, $"{hrefPrefix}type/{EscapeFile(t.Name)}.html"));
+    sb.AppendLine("<h3>Types</h3><ul class=\"nav-types-root\">");
+    AppendTypeInheritanceTree(sb, project, hrefPrefix, highlightKind, highlightId);
     sb.AppendLine("</ul><h3>Bitfield types</h3><ul>");
     foreach (var b in project.BitfieldTypes.OrderBy(x => x.Name))
       sb.AppendLine(
@@ -172,6 +175,141 @@ details.ancestor summary { cursor: pointer; font-weight: 600; }
       sb.AppendLine(Li("doc", d.Id, d.Title, $"{hrefPrefix}doc/{EscapeFile(d.Id)}.html"));
     sb.AppendLine("</ul></nav>");
     return sb.ToString();
+  }
+
+  /// <summary>Nested <c>ul/li</c> by <see cref="TypeDecl.ParentName"/>; roots = no parent or parent not in this project.</summary>
+  private static void AppendTypeInheritanceTree(
+    StringBuilder sb,
+    ProjectIr project,
+    string hrefPrefix,
+    string? highlightKind,
+    string? highlightId
+  )
+  {
+    var typeMap = project.Types.ToDictionary(t => t.Name, StringComparer.Ordinal);
+    var inProject = typeMap.Keys.ToHashSet(StringComparer.Ordinal);
+    var childrenByParent = new Dictionary<string, List<string>>(StringComparer.Ordinal);
+    foreach (var t in project.Types)
+    {
+      var p = t.ParentName;
+      if (string.IsNullOrEmpty(p) || !inProject.Contains(p))
+        continue;
+      if (!childrenByParent.TryGetValue(p, out var list))
+      {
+        list = new List<string>();
+        childrenByParent[p] = list;
+      }
+
+      list.Add(t.Name);
+    }
+
+    foreach (var kv in childrenByParent)
+      kv.Value.Sort(StringComparer.OrdinalIgnoreCase);
+
+    var roots = project.Types
+      .Where(t => string.IsNullOrEmpty(t.ParentName) || !inProject.Contains(t.ParentName!))
+      .Select(t => t.Name)
+      .Distinct()
+      .OrderBy(x => x, StringComparer.OrdinalIgnoreCase)
+      .ToList();
+
+    foreach (var root in roots)
+    {
+      var visiting = new HashSet<string>(StringComparer.Ordinal);
+      AppendTypeTreeNode(
+        sb,
+        hrefPrefix,
+        highlightKind,
+        highlightId,
+        childrenByParent,
+        typeMap,
+        root,
+        visiting
+      );
+    }
+  }
+
+  private static void AppendTypeTreeNode(
+    StringBuilder sb,
+    string hrefPrefix,
+    string? highlightKind,
+    string? highlightId,
+    Dictionary<string, List<string>> childrenByParent,
+    IReadOnlyDictionary<string, TypeDecl> typeMap,
+    string typeName,
+    HashSet<string> visiting
+  )
+  {
+    if (!visiting.Add(typeName))
+    {
+      AppendTypeTreeLinkLine(sb, hrefPrefix, highlightKind, highlightId, typeName);
+      return;
+    }
+
+    try
+    {
+      if (!typeMap.ContainsKey(typeName))
+        return;
+
+      var kids = childrenByParent.TryGetValue(typeName, out var list) ? list : null;
+      var href = $"{hrefPrefix}type/{EscapeFile(typeName)}.html";
+      var cur =
+        highlightKind != null
+        && string.Equals(highlightKind, "type", StringComparison.OrdinalIgnoreCase)
+        && string.Equals(highlightId, typeName, StringComparison.Ordinal);
+      var cls = cur ? " class=\"nav-current\"" : "";
+      var aria = cur ? " aria-current=\"page\"" : "";
+      var encName = System.Net.WebUtility.HtmlEncode(typeName);
+      var encHref = System.Net.WebUtility.HtmlEncode(href);
+
+      if (kids == null || kids.Count == 0)
+      {
+        sb.AppendLine($"<li{cls}><a href=\"{encHref}\"{aria}>{encName}</a></li>");
+        return;
+      }
+
+      sb.AppendLine($"<li{cls}><a href=\"{encHref}\"{aria}>{encName}</a>");
+      sb.AppendLine("<ul class=\"nav-tree\">");
+      foreach (var child in kids)
+      {
+        AppendTypeTreeNode(
+          sb,
+          hrefPrefix,
+          highlightKind,
+          highlightId,
+          childrenByParent,
+          typeMap,
+          child,
+          visiting
+        );
+      }
+
+      sb.AppendLine("</ul></li>");
+    }
+    finally
+    {
+      visiting.Remove(typeName);
+    }
+  }
+
+  private static void AppendTypeTreeLinkLine(
+    StringBuilder sb,
+    string hrefPrefix,
+    string? highlightKind,
+    string? highlightId,
+    string typeName
+  )
+  {
+    var href = $"{hrefPrefix}type/{EscapeFile(typeName)}.html";
+    var cur =
+      highlightKind != null
+      && string.Equals(highlightKind, "type", StringComparison.OrdinalIgnoreCase)
+      && string.Equals(highlightId, typeName, StringComparison.Ordinal);
+    var cls = cur ? " class=\"nav-current\"" : "";
+    var aria = cur ? " aria-current=\"page\"" : "";
+    sb.AppendLine(
+      $"<li{cls}><a href=\"{System.Net.WebUtility.HtmlEncode(href)}\"{aria}>{System.Net.WebUtility.HtmlEncode(typeName)}</a></li>"
+    );
   }
 
   private static void CollectUnresolvedNames(

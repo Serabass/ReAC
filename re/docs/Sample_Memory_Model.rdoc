@@ -4,6 +4,7 @@ document Sample_Memory_Model {
     ref CEntity
     ref CPhysical
     ref CPed
+    ref CPlayer
     ref CVector
     ref CMatrix
     ref CObject
