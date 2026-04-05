@@ -17,7 +17,7 @@ class CPhysical : CEntity size 0x120 {
   0x0E6 collisionObjectCount : byte
   0x100 speed : float
   0x104 collisionPower : float
-  0x11A inWater : byte
+  0x11A flags1 : CPhysicalFlags1
   0x11C collisionValue : byte
   0x11D originLevel : byte
 }
