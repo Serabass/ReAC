@@ -1,9 +1,10 @@
 class CPhysical : CEntity size 0x120 {
   module Sample.Core
-  source "https://example.com/reverse/sample-memory"
-  source "https://example.com/reverse/sample-functions"
+  source "https://gtamods.com/wiki/Memory_Addresses_(VC)#CPhysical"
+
   fn 0x004B9010 GetHasCollidedWith(CEntity*) : bool
   note fn GetHasCollidedWith "Returns whether this physical is colliding with the given entity."
+
   0x064 audioEntity : uint32
   0x06C lastCollisionTime : uint32
   0x070 moveSpeed : CVector
