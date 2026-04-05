@@ -21,3 +21,9 @@ class CPhysical : CEntity size 0x120 {
   0x11C collisionValue : byte
   0x11D originLevel : byte
 }
+
+bitfield CPhysicalFlags1 : byte {
+  source "https://gtamods.com/wiki/Memory_Addresses_(VC)#CPhysical"
+  summary "First physical flags byte (VC); names from GTAMods wiki."
+  4 bInWater
+}

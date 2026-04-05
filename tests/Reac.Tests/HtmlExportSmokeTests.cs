@@ -27,6 +27,9 @@ public class HtmlExportSmokeTests
       var cped = Path.Combine(outDir, "type", "CPed.html");
       Assert.True(File.Exists(cped));
       var pedHtml = File.ReadAllText(cped);
+      Assert.Contains("class=\"sidebar\"", pedHtml, StringComparison.Ordinal);
+      Assert.Contains("sidebar-home", pedHtml, StringComparison.Ordinal);
+      Assert.Contains("nav-current", pedHtml, StringComparison.Ordinal);
       Assert.Contains("Static fields", pedHtml, StringComparison.Ordinal);
       Assert.Contains("0x94AD28", pedHtml, StringComparison.Ordinal);
       Assert.Contains("Player", pedHtml, StringComparison.Ordinal);

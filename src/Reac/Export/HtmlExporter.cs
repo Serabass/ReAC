@@ -40,6 +40,10 @@ nav.sidebar ul { list-style: none; padding: 0; margin: 0 0 1rem; }
 nav.sidebar li { margin: 0.2rem 0; word-break: break-word; }
 main.index-main { flex: 1; padding: 1.75rem 2rem; min-width: 0; }
 main.index-main > p.lead { color: #5c6570; margin-top: 0; max-width: 52ch; }
+main.page-main { flex: 1; min-width: 0; background: #fff; }
+main.page-main > .page { box-shadow: none; min-height: 0; }
+nav.sidebar p.sidebar-home { margin: 0 0 1rem; font-size: 0.95rem; font-weight: 600; }
+nav.sidebar li.nav-current a { font-weight: 600; color: #063a91; }
 /* Inner pages */
 .page { max-width: 920px; margin: 0 auto; padding: 1.5rem 1.35rem 2.75rem; background: #fff;
   min-height: 100vh; box-shadow: 0 0 0 1px #cfd6dd; }
@@ -64,29 +68,9 @@ details.ancestor summary { cursor: pointer; font-weight: 600; }
     indexSb.AppendLine("<title>REaC — Knowledge base</title>");
     indexSb.AppendLine(StylesCommon);
     indexSb.AppendLine("</head><body>");
-    indexSb.AppendLine(
-      "<div class=\"layout\"><nav class=\"sidebar\" aria-label=\"Site\"><h3>Types</h3><ul>"
-    );
-    foreach (var t in project.Types.OrderBy(x => x.Name))
-      indexSb.AppendLine(
-        $"<li><a href=\"type/{EscapeFile(t.Name)}.html\">{System.Net.WebUtility.HtmlEncode(t.Name)}</a></li>"
-      );
-    indexSb.AppendLine("</ul><h3>Bitfield types</h3><ul>");
-    foreach (var b in project.BitfieldTypes.OrderBy(x => x.Name))
-      indexSb.AppendLine(
-        $"<li><a href=\"bitfield/{EscapeFile(b.Name)}.html\">{System.Net.WebUtility.HtmlEncode(b.Name)}</a></li>"
-      );
-    indexSb.AppendLine("</ul><h3>Enum types</h3><ul>");
-    foreach (var e in project.EnumTypes.OrderBy(x => x.Name))
-      indexSb.AppendLine(
-        $"<li><a href=\"enum/{EscapeFile(e.Name)}.html\">{System.Net.WebUtility.HtmlEncode(e.Name)}</a></li>"
-      );
-    indexSb.AppendLine("</ul><h3>Docs</h3><ul>");
-    foreach (var d in project.Documents.OrderBy(x => x.Id))
-      indexSb.AppendLine(
-        $"<li><a href=\"doc/{EscapeFile(d.Id)}.html\">{System.Net.WebUtility.HtmlEncode(d.Title)}</a></li>"
-      );
-    indexSb.AppendLine("</ul></nav><main class=\"index-main\"><h1>REaC</h1>");
+    indexSb.AppendLine("<div class=\"layout\">");
+    indexSb.AppendLine(BuildSidebarNav(project, "", null, null));
+    indexSb.AppendLine("<main class=\"index-main\"><h1>REaC</h1>");
     indexSb.AppendLine(
       "<p class=\"lead\">Reverse-engineering knowledge base — types, bitfields, enums, and documents exported as static HTML.</p></main></div></body></html>"
     );
@@ -101,7 +85,13 @@ details.ancestor summary { cursor: pointer; font-weight: 600; }
       foreach (var f in layout.Flattened)
         CollectUnresolvedNames(f.Type, typeMap, unresolved);
 
-      var html = RenderTypePage(t, layout, unresolved.Distinct().ToList(), typeMap);
+      var html = RenderTypePage(
+        t,
+        layout,
+        unresolved.Distinct().ToList(),
+        typeMap,
+        BuildSidebarNav(project, "../", "type", t.Name)
+      );
       File.WriteAllText(Path.Combine(typeDir, EscapeFile(t.Name) + ".html"), html, Encoding.UTF8);
     }
 
@@ -109,7 +99,11 @@ details.ancestor summary { cursor: pointer; font-weight: 600; }
     Directory.CreateDirectory(docDir);
     foreach (var d in project.Documents)
     {
-      var html = RenderDocPage(d, project);
+      var html = RenderDocPage(
+        d,
+        project,
+        BuildSidebarNav(project, "../", "doc", d.Id)
+      );
       File.WriteAllText(Path.Combine(docDir, EscapeFile(d.Id) + ".html"), html, Encoding.UTF8);
     }
 
@@ -117,7 +111,7 @@ details.ancestor summary { cursor: pointer; font-weight: 600; }
     Directory.CreateDirectory(bitfieldDir);
     foreach (var b in project.BitfieldTypes)
     {
-      var html = RenderBitfieldPage(b);
+      var html = RenderBitfieldPage(b, BuildSidebarNav(project, "../", "bitfield", b.Name));
       File.WriteAllText(
         Path.Combine(bitfieldDir, EscapeFile(b.Name) + ".html"),
         html,
@@ -129,13 +123,56 @@ details.ancestor summary { cursor: pointer; font-weight: 600; }
     Directory.CreateDirectory(enumDir);
     foreach (var e in project.EnumTypes)
     {
-      var html = RenderEnumPage(e);
+      var html = RenderEnumPage(e, BuildSidebarNav(project, "../", "enum", e.Name));
       File.WriteAllText(Path.Combine(enumDir, EscapeFile(e.Name) + ".html"), html, Encoding.UTF8);
     }
   }
 
   private static string EscapeFile(string name) =>
     name.Replace('<', '_').Replace('>', '_').Replace(':', '_').Replace('*', '_');
+
+  /// <summary>Left navigation: types, bitfields, enums, docs. Use <paramref name="hrefPrefix"/> <c>""</c> for index, <c>"../"</c> for pages in subfolders.</summary>
+  private static string BuildSidebarNav(
+    ProjectIr project,
+    string hrefPrefix,
+    string? highlightKind,
+    string? highlightId
+  )
+  {
+    bool IsCurrent(string kind, string id) =>
+      highlightKind != null
+      && string.Equals(highlightKind, kind, StringComparison.OrdinalIgnoreCase)
+      && string.Equals(highlightId, id, StringComparison.Ordinal);
+
+    string Li(string kind, string id, string label, string href)
+    {
+      var cur = IsCurrent(kind, id);
+      var cls = cur ? " class=\"nav-current\"" : "";
+      var aria = cur ? " aria-current=\"page\"" : "";
+      var enc = System.Net.WebUtility.HtmlEncode(label);
+      return $"<li{cls}><a href=\"{System.Net.WebUtility.HtmlEncode(href)}\"{aria}>{enc}</a></li>";
+    }
+
+    var sb = new StringBuilder();
+    sb.AppendLine("<nav class=\"sidebar\" aria-label=\"Site\">");
+    sb.AppendLine($"<p class=\"sidebar-home\"><a href=\"{System.Net.WebUtility.HtmlEncode($"{hrefPrefix}index.html")}\">REaC</a></p>");
+    sb.AppendLine("<h3>Types</h3><ul>");
+    foreach (var t in project.Types.OrderBy(x => x.Name))
+      sb.AppendLine(Li("type", t.Name, t.Name, $"{hrefPrefix}type/{EscapeFile(t.Name)}.html"));
+    sb.AppendLine("</ul><h3>Bitfield types</h3><ul>");
+    foreach (var b in project.BitfieldTypes.OrderBy(x => x.Name))
+      sb.AppendLine(
+        Li("bitfield", b.Name, b.Name, $"{hrefPrefix}bitfield/{EscapeFile(b.Name)}.html")
+      );
+    sb.AppendLine("</ul><h3>Enum types</h3><ul>");
+    foreach (var e in project.EnumTypes.OrderBy(x => x.Name))
+      sb.AppendLine(Li("enum", e.Name, e.Name, $"{hrefPrefix}enum/{EscapeFile(e.Name)}.html"));
+    sb.AppendLine("</ul><h3>Docs</h3><ul>");
+    foreach (var d in project.Documents.OrderBy(x => x.Id))
+      sb.AppendLine(Li("doc", d.Id, d.Title, $"{hrefPrefix}doc/{EscapeFile(d.Id)}.html"));
+    sb.AppendLine("</ul></nav>");
+    return sb.ToString();
+  }
 
   private static void CollectUnresolvedNames(
     TypeExpr expr,
@@ -162,7 +199,8 @@ details.ancestor summary { cursor: pointer; font-weight: 600; }
     TypeDecl t,
     TypeLayout layout,
     IReadOnlyList<string> unresolved,
-    IReadOnlyDictionary<string, TypeDecl> typeMap
+    IReadOnlyDictionary<string, TypeDecl> typeMap,
+    string sidebarNavHtml
   )
   {
     var sb = new StringBuilder();
@@ -170,7 +208,10 @@ details.ancestor summary { cursor: pointer; font-weight: 600; }
     sb.AppendLine("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">");
     sb.AppendLine("<title>" + System.Net.WebUtility.HtmlEncode(t.Name) + " — REaC</title>");
     sb.AppendLine(StylesCommon);
-    sb.AppendLine("</head><body><div class=\"page\">");
+    sb.AppendLine("</head><body>");
+    sb.AppendLine("<div class=\"layout\">");
+    sb.AppendLine(sidebarNavHtml);
+    sb.AppendLine("<main class=\"page-main\"><div class=\"page\">");
     sb.AppendLine("<p class=\"breadcrumb\"><a href=\"../index.html\">Index</a></p>");
     sb.AppendLine(
       "<h1>"
@@ -405,7 +446,7 @@ details.ancestor summary { cursor: pointer; font-weight: 600; }
     else
       foreach (var u in unresolved)
         sb.AppendLine("<li>" + System.Net.WebUtility.HtmlEncode(u) + "</li>");
-    sb.AppendLine("</ul></div></body></html>");
+    sb.AppendLine("</ul></div></main></div></body></html>");
     return sb.ToString();
   }
 
@@ -495,14 +536,17 @@ details.ancestor summary { cursor: pointer; font-weight: 600; }
     return System.Net.WebUtility.HtmlEncode(TypeString(t));
   }
 
-  private static string RenderBitfieldPage(BitfieldTypeDecl b)
+  private static string RenderBitfieldPage(BitfieldTypeDecl b, string sidebarNavHtml)
   {
     var sb = new StringBuilder();
     sb.AppendLine("<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"utf-8\">");
     sb.AppendLine("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">");
     sb.AppendLine("<title>" + System.Net.WebUtility.HtmlEncode(b.Name) + " — REaC</title>");
     sb.AppendLine(StylesCommon);
-    sb.AppendLine("</head><body><div class=\"page\">");
+    sb.AppendLine("</head><body>");
+    sb.AppendLine("<div class=\"layout\">");
+    sb.AppendLine(sidebarNavHtml);
+    sb.AppendLine("<main class=\"page-main\"><div class=\"page\">");
     sb.AppendLine("<p class=\"breadcrumb\"><a href=\"../index.html\">Index</a></p>");
     sb.AppendLine(
       "<h1>" + System.Net.WebUtility.HtmlEncode(b.Name) + " <small>(bitfield)</small></h1>"
@@ -538,18 +582,21 @@ details.ancestor summary { cursor: pointer; font-weight: 600; }
           sb.AppendLine("<li>" + enc + "</li>");
       }
 
-    sb.AppendLine("</ul></div></div></body></html>");
+    sb.AppendLine("</ul></div></div></main></div></body></html>");
     return sb.ToString();
   }
 
-  private static string RenderEnumPage(EnumTypeDecl e)
+  private static string RenderEnumPage(EnumTypeDecl e, string sidebarNavHtml)
   {
     var sb = new StringBuilder();
     sb.AppendLine("<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"utf-8\">");
     sb.AppendLine("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">");
     sb.AppendLine("<title>" + System.Net.WebUtility.HtmlEncode(e.Name) + " — REaC</title>");
     sb.AppendLine(StylesCommon);
-    sb.AppendLine("</head><body><div class=\"page\">");
+    sb.AppendLine("</head><body>");
+    sb.AppendLine("<div class=\"layout\">");
+    sb.AppendLine(sidebarNavHtml);
+    sb.AppendLine("<main class=\"page-main\"><div class=\"page\">");
     sb.AppendLine("<p class=\"breadcrumb\"><a href=\"../index.html\">Index</a></p>");
     sb.AppendLine(
       "<h1>" + System.Net.WebUtility.HtmlEncode(e.Name) + " <small>(enum)</small></h1>"
@@ -591,18 +638,21 @@ details.ancestor summary { cursor: pointer; font-weight: 600; }
           sb.AppendLine("<li>" + enc + "</li>");
       }
 
-    sb.AppendLine("</ul></div></div></body></html>");
+    sb.AppendLine("</ul></div></div></main></div></body></html>");
     return sb.ToString();
   }
 
-  private static string RenderDocPage(DocumentDecl d, ProjectIr project)
+  private static string RenderDocPage(DocumentDecl d, ProjectIr project, string sidebarNavHtml)
   {
     var sb = new StringBuilder();
     sb.AppendLine("<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"utf-8\">");
     sb.AppendLine("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">");
     sb.AppendLine("<title>" + System.Net.WebUtility.HtmlEncode(d.Title) + " — REaC</title>");
     sb.AppendLine(StylesCommon);
-    sb.AppendLine("</head><body><div class=\"page\">");
+    sb.AppendLine("</head><body>");
+    sb.AppendLine("<div class=\"layout\">");
+    sb.AppendLine(sidebarNavHtml);
+    sb.AppendLine("<main class=\"page-main\"><div class=\"page\">");
     sb.AppendLine("<p class=\"breadcrumb\"><a href=\"../index.html\">Index</a></p>");
     sb.AppendLine("<h1>" + System.Net.WebUtility.HtmlEncode(d.Title) + "</h1>");
     if (!string.IsNullOrEmpty(d.Summary))
@@ -632,7 +682,7 @@ details.ancestor summary { cursor: pointer; font-weight: 600; }
       sb.AppendLine("<p>" + System.Net.WebUtility.HtmlEncode(s.Text) + "</p>");
     }
 
-    sb.AppendLine("</div></body></html>");
+    sb.AppendLine("</div></main></div></body></html>");
     return sb.ToString();
   }
 }
