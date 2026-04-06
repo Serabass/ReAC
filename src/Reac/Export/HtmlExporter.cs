@@ -47,7 +47,7 @@ main.index-main > p.lead { color: #5c6570; margin-top: 0; max-width: 52ch; }
 main.page-main { flex: 1; min-width: 0; background: #fff; }
 main.page-main > .page { box-shadow: none; min-height: 0; }
 nav.sidebar p.sidebar-home { margin: 0 0 1rem; font-size: 0.95rem; font-weight: 600; }
-nav.sidebar li.nav-current a { font-weight: 600; color: #063a91; }
+nav.sidebar li.nav-current > a { font-weight: 600; color: #063a91; }
 /* Inner pages */
 .page { max-width: 920px; margin: 0 auto; padding: 1.5rem 1.35rem 2.75rem; background: #fff;
   min-height: 100vh; box-shadow: 0 0 0 1px #cfd6dd; }
