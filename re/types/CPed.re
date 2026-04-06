@@ -10,7 +10,7 @@ class CPed : CPhysical {
   note Player "Singleton / global; points to the active player (instance of CPed)."
 
   0x141 fastShoot : bool
-  0x14C shoootingAnim : byte
+  0x14C shootingAnim : byte
   0x354 health : float
   note health "Current health; game scripts or natives may write this field."
 
