@@ -11,12 +11,13 @@ class CStats {
   static 0x9751F0 helisDestroyed          : uint32
   static 0x97F1F4 daysPassed              : uint32
   static 0x94ADD0 hiddenPackages          : HiddenPackagesStat
+  static 0x9B5F8C cheatedCount            : uint32
 }
 
 class HiddenPackagesStat {
   module Core.Main
   source "https://gtamods.com/wiki/List_of_statistics_(VC)"
 
-  0x00 found : uint32
-  0x04 total : uint32
+  0x00 found : uint32 // 0x94ADD0
+  0x04 total : uint32 // 0x94ADD4
 }
