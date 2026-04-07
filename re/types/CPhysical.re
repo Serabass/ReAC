@@ -1,4 +1,4 @@
-class CPhysical : CEntity size 0x120 {
+class CPhysical : CEntity {
   module Core.Main
   source "https://gtamods.com/wiki/Memory_Addresses_(VC)#CPhysical"
 
