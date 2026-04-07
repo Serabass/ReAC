@@ -7,13 +7,27 @@ services:
     volumes:
       - .:/work
 
+  # Re-export HTML when *.re / *.rdoc / project.toml change (see src/Reac/Reac.csproj <Watch>).
+  # docker compose run --rm watch
+  watch:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    working_dir: /work
+    volumes:
+      - .:/work
+    # Bind mount from Windows host: inotify often misses edits; polling sees .re saves reliably.
+    environment:
+      DOTNET_USE_POLLING_FILE_WATCHER: "1"
+    command: dotnet watch --project src/Reac/Reac.csproj run -- export-html -p /work
+
   # Static site (nginx): docker compose --profile site up site
   # http://localhost:8080
   site:
     profiles:
       - site
-    build:
-      context: .
-      dockerfile: Dockerfile.site
+    image: nginx:1.29.7-alpine
+    volumes:
+      - ./re/generated/html:/usr/share/nginx/html
     ports:
-      - "8080:80"
+      - "8089:80"
