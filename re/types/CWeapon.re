@@ -2,7 +2,7 @@ enum eWeaponType : uint32 {
   source "https://gtamods.com/wiki/Memory_Addresses_(VC)#CWeapon"
   summary "Illustrative weapon type ids"
   0 unarmed "No weapon equipped."
-  1 baseballBat
+  1 baseballBat "Baseball bat"
   22 pistol "Standard sidearm."
 }
 
@@ -15,7 +15,7 @@ enum eWeaponStatus : uint32 {
   3 noAmmo
 }
 
-struct CWeapon size 0x18 {
+struct CWeapon {
   module Core.Main
   source "https://gtamods.com/wiki/Memory_Addresses_(VC)#CWeapon"
 

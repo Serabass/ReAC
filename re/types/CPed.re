@@ -16,20 +16,28 @@ class CPed : CPhysical {
 
   // Last vehicle the ped was in
   0x3A8 lastVehicle : CVehicle*
+
   // Ped type
   0x3D4 pedType: EPedType
+
   // Weapons
   0x408 weapons : CWeapon[10]
+
   // Targeted ped
   0x508 targetedPed : CPed*
+
   // Nearest peds
   0x56C nearestPed : CPed*[10]
+
   // Wanted
   0x5F4 wanted : CWanted*
+
   // Drunkenness
   0x638 drunkenness : bool
+
   // Drunkenness countdown
   0x639 drunkennessCountdown : byte
+
   // Can be damaged
   0x63D canBeDamaged : bool
 }
