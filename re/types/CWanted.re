@@ -1,5 +1,4 @@
-
-bitfield eWantedActivity : byte {
+bitfield WantedActivityFlags : byte {
   source "https://gtamods.com/wiki/Memory_Addresses_(VC)#CWanted"
   summary "CWanted Activity fields"
   0 bCopsIgnorePlayer
@@ -9,7 +8,7 @@ bitfield eWantedActivity : byte {
   4 bArmyRequired
 }
 
-struct CWanted size 0x24 {
+struct CWanted {
   module Core.Main
   source "https://gtamods.com/wiki/Memory_Addresses_(VC)#CWanted"
 
@@ -17,6 +16,6 @@ struct CWanted size 0x24 {
   note fn SetMaximumWantedLevel "Illustrative; tie to your script/runtime docs if applicable."
 
   0x000 chaos     : uint32
-  0x01E activity  : eWantedActivity
+  0x01E activity  : WantedActivityFlags
   0x020 hudLevel  : uint32
 }

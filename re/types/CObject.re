@@ -1,4 +1,4 @@
-class CObject : CPhysical size 0x1A0 {
+class CObject : CPhysical {
   module Core.Main
   source "https://gtamods.com/wiki/Memory_Addresses_(VC)#CObject"
 
@@ -7,8 +7,8 @@ class CObject : CPhysical size 0x1A0 {
   0x120 matDummyInitial           : byte[72]
   0x168 fAttachForce              : float
   0x16C byteObjectType            : byte
-  0x16D objectFlags1              : CObjectObjectFlags1
-  0x16E objectFlags2              : CObjectObjectFlags2
+  0x16D objectFlags1              : CObjectFlags1
+  0x16E objectFlags2              : CObjectFlags2
   0x16F bytePickupObjectBonusType : byte
   0x170 wPickupObjectQuantity     : uint16
   0x174 fDamageMultiplier         : float
@@ -22,4 +22,23 @@ class CObject : CPhysical size 0x1A0 {
   0x18C pContactPhysical          : CPhysical*
   0x190 byteVehicleMainColor      : byte
   0x191 byteVehicleExtraColor     : byte
+}
+bitfield CObjectFlags1 : byte {
+  source "https://gtamods.com/wiki/Memory_Addresses_(VC)#CObject"
+  summary "First object flags byte (VC); names from GTAMods wiki."
+  0 bIsPickupObject
+  1 bDoCircleEffect
+  2 bRenderPickupQuantity
+  3 bRenderPickupAvailability
+  4 bWindowMinorCollisionDamage
+  5 bHasWindowBeenBrokenByMelee
+  6 bHasObjectExplosionTriggered
+  7 bIsVehicleComponent
+}
+
+bitfield CObjectFlags2 : byte {
+  source "https://gtamods.com/wiki/Memory_Addresses_(VC)#CObject"
+  summary "Second object flags byte (VC); names from GTAMods wiki."
+  0 bSpecialLighting
+  1 bNoVehicleCollisionWhenDetached
 }
