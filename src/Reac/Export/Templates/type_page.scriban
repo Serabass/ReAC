@@ -1,0 +1,82 @@
+<main class="page-main"><div class="page">
+<p class="breadcrumb"><a href="../index.html">Index</a></p>
+<h1>{{ Name | html.escape }} <small>({{ KindLabel | html.escape }})</small></h1>
+<p>Total size: {{ SizeText }}{{ if SizeInferred }} <span class="prov">(inferred)</span>{{ end }} &nbsp; Parent: {{ ParentName | html.escape }}</p>
+<h2>Inheritance chain</h2><p>{{ InheritanceChainText | html.escape }}</p>
+{{ if ShowAncestorSection }}
+<h2>Ancestor types</h2>
+{{ for a in Ancestors }}
+<details class="ancestor"><summary>Base: {{ a.Name | html.escape }} (<a href="{{ a.PageHref | html.escape }}">page</a>)</summary>
+<table><thead><tr><th>Off</th><th>Name</th><th>Type</th><th>Note</th></tr></thead><tbody>
+{{ for row in a.InstanceRows }}
+<tr><td>{{ row.C1 }}</td><td>{{ row.NamePlain | html.escape }}</td><td>{{ row.TypeHtml }}</td><td class="prov">{{ row.NoteHtml }}</td></tr>
+{{ end }}
+</tbody></table>
+{{ if a.HasStaticRows }}
+<p class="prov"><strong>Static</strong> (module address)</p>
+<table><thead><tr><th>Address</th><th>Name</th><th>Type</th><th>Note</th></tr></thead><tbody>
+{{ for row in a.StaticRows }}
+<tr><td>{{ row.C1 }}</td><td>{{ row.NamePlain | html.escape }}</td><td>{{ row.TypeHtml }}</td><td class="prov">{{ row.NoteHtml }}</td></tr>
+{{ end }}
+</tbody></table>
+{{ end }}
+</details>
+{{ end }}
+{{ end }}
+<h2>Own fields</h2>
+<table><thead><tr><th>Off</th><th>Name</th><th>Type</th><th>Note</th></tr></thead><tbody>
+{{ for row in OwnFieldRows }}
+<tr><td>{{ row.C1 }}</td><td>{{ row.NamePlain | html.escape }}</td><td>{{ row.TypeHtml }}</td><td class="prov">{{ row.NoteHtml }}</td></tr>
+{{ end }}
+</tbody></table>
+{{ if ShowStaticHierarchy }}
+<h2 id="static-fields">Static fields</h2>
+<p class="prov">Absolute addresses in the module image (globals / singletons), not offsets inside an instance.</p>
+<table><thead><tr><th>Address</th><th>Declaring type</th><th>Name</th><th>Type</th><th>Note</th></tr></thead><tbody>
+{{ for row in StaticHierarchyRows }}
+<tr><td>{{ row.Addr }}</td><td>{{ row.DeclaringType | html.escape }}</td><td>{{ row.NamePlain | html.escape }}</td><td>{{ row.TypeHtml }}</td><td class="prov">{{ row.NoteHtml }}</td></tr>
+{{ end }}
+</tbody></table>
+{{ end }}
+{{ ProvenanceHtml }}
+<h2>Native functions</h2>
+{{ if !HasAnyNativeFn }}
+<p class="prov">(none declared)</p>
+{{ else }}
+{{ for sec in NativeFnSections }}
+<h3>{{ sec.TypeName | html.escape }}</h3>
+<table><thead><tr><th>Address</th><th>Name</th><th>Parameters</th><th>Returns</th><th>Note</th></tr></thead><tbody>
+{{ for fn in sec.Rows }}
+<tr><td>{{ fn.AddrHex }}</td><td>{{ fn.NamePlain | html.escape }}</td><td>{{ fn.ParamsPlain | html.escape }}</td><td>{{ fn.ReturnPlain | html.escape }}</td><td class="prov">{{ fn.NotePlain | html.escape }}</td></tr>
+{{ end }}
+</tbody></table>
+{{ end }}
+{{ end }}
+<h2>Flattened layout</h2>
+<p class="prov">Instance members by offset; static globals from the same inheritance chain are appended below.</p>
+<table><thead><tr><th>Off / address</th><th>Name</th><th>Type</th><th>Declaring</th><th>Layout</th></tr></thead><tbody>
+{{ for row in FlatRows }}
+<tr{{ if row.IsStaticRow }} class="static-field"{{ end }}><td>{{ row.Cell1Html }}</td><td>{{ row.NamePlain | html.escape }}</td><td>{{ row.TypeHtml }}</td><td>{{ row.DeclaringPlain | html.escape }}</td><td class="prov">{{ row.LayoutText | html.escape }}</td></tr>
+{{ end }}
+</tbody></table>
+<h2>Grouped by declaring type</h2>
+{{ for g in GroupedSections }}
+<h3>{{ g.TypeName | html.escape }}</h3>
+<table><thead><tr><th>Off</th><th>Name</th><th>Type</th><th>Note / bits</th></tr></thead><tbody>
+{{ for row in g.InstanceRows }}
+<tr><td>{{ row.C1 }}</td><td>{{ row.NamePlain | html.escape }}</td><td>{{ row.TypeHtml }}</td><td class="prov">{{ row.NoteHtml }}</td></tr>
+{{ end }}
+{{ for row in g.StaticRows }}
+<tr><td class="prov">{{ row.AddrPlain | html.escape }}</td><td>{{ row.NamePlain | html.escape }}</td><td>{{ row.TypeHtml }}</td><td class="prov">{{ row.NoteHtml }}</td></tr>
+{{ end }}
+</tbody></table>
+{{ end }}
+<h2>Unresolved references</h2><ul>
+{{ if UnresolvedEmpty }}
+<li>(none)</li>
+{{ else }}
+{{ for u in Unresolved }}
+<li>{{ u | html.escape }}</li>
+{{ end }}
+{{ end }}
+</ul></div></main>

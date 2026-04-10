@@ -1,0 +1,15 @@
+{{ if HasNote }}{{ Note | html.escape }}{{ end }}
+{{ if HasBits }}
+<ul class="prov">
+{{ for b in FlagBits }}
+<li>bit {{ b.Bit }}: {{ b.Name | html.escape }}</li>
+{{ end }}
+</ul>
+{{ end }}
+{{ if HasEnums }}
+<ul class="prov">
+{{ for ev in EnumValues }}
+<li>{{ ev.Value }}: {{ ev.Name | html.escape }}{{ if ev.Description }} — {{ ev.Description | html.escape }}{{ end }}</li>
+{{ end }}
+</ul>
+{{ end }}

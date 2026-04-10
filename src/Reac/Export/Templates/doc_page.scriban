@@ -1,0 +1,15 @@
+<main class="page-main"><div class="page">
+<p class="breadcrumb"><a href="../index.html">Index</a></p>
+<h1>{{ title | html.escape }}</h1>
+{{ if summary }}<p>{{ summary | html.escape }}</p>{{ end }}
+<h2>References</h2>
+<ul>
+{{ for r in references }}
+<li><a href="{{ r.href }}">{{ r.label | html.escape }}</a></li>
+{{ end }}
+</ul>
+{{ for s in sections }}
+<h2>{{ s.name | html.escape }}</h2>
+<p>{{ s.text | html.escape }}</p>
+{{ end }}
+</div></main>

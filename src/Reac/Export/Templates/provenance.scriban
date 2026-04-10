@@ -1,0 +1,15 @@
+<h2>Provenance</h2><div class="prov">
+<div>File: {{ FilePath | html.escape }}</div>
+<div>Sources:</div><ul class="prov">
+{{ if !HasUrls }}
+<li>(none)</li>
+{{ else }}
+{{ for u in SourceUrls }}
+{{ if u.IsHttp }}
+<li><a href="{{ u.Url | html.escape }}" target="_blank">{{ u.Url | html.escape }}</a></li>
+{{ else }}
+<li>{{ u.Url | html.escape }}</li>
+{{ end }}
+{{ end }}
+{{ end }}
+</ul></div>

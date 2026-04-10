@@ -1,7 +1,32 @@
-re/generated/
-bin/
-obj/
-.vs/
-TestResults/
+# Build / .NET
+**/bin/
+**/obj/
+artifacts/
 *.user
 *.suo
+*.userosscache
+*.sln.docstates
+
+# Tests
+TestResults/
+*.trx
+coverage/
+*.coverage
+*.coveragexml
+
+# IDE
+.vs/
+.idea/
+*.DotSettings.user
+
+# OS
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Local tooling / ad-hoc export (reac export-html -o …)
+_html_out/
+
+# Project-generated KB artifacts (see project.toml generated_dir)
+re/generated/

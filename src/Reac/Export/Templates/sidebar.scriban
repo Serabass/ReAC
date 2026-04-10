@@ -1,0 +1,39 @@
+{{ func nav_type_node(n) }}
+{{ if n.HasChildren }}
+<li{{ if n.Current }} class="nav-current"{{ end }}><a href="{{ n.Href | html.escape }}"{{ if n.Current }} aria-current="page"{{ end }}>{{ n.Name | html.escape }}</a>
+<ul class="nav-tree">
+{{ for c in n.Children }}
+{{ nav_type_node c }}
+{{ end }}
+</ul></li>
+{{ else }}
+<li{{ if n.Current }} class="nav-current"{{ end }}><a href="{{ n.Href | html.escape }}"{{ if n.Current }} aria-current="page"{{ end }}>{{ n.Name | html.escape }}</a></li>
+{{ end }}
+{{ end }}
+<nav class="sidebar" aria-label="Site">
+<p class="sidebar-home"><a href="{{ HomeHref | html.escape }}">REaC</a></p>
+<h3>Types</h3>
+<ul class="nav-types-root">
+{{ for root in TypeRoots }}
+{{ nav_type_node root }}
+{{ end }}
+</ul>
+<h3>Bitfield types</h3>
+<ul>
+{{ for x in Bitfields }}
+<li{{ if x.Current }} class="nav-current"{{ end }}><a href="{{ x.Href | html.escape }}"{{ if x.Current }} aria-current="page"{{ end }}>{{ x.Label | html.escape }}</a></li>
+{{ end }}
+</ul>
+<h3>Enum types</h3>
+<ul>
+{{ for x in Enums }}
+<li{{ if x.Current }} class="nav-current"{{ end }}><a href="{{ x.Href | html.escape }}"{{ if x.Current }} aria-current="page"{{ end }}>{{ x.Label | html.escape }}</a></li>
+{{ end }}
+</ul>
+<h3>Docs</h3>
+<ul>
+{{ for x in Docs }}
+<li{{ if x.Current }} class="nav-current"{{ end }}><a href="{{ x.Href | html.escape }}"{{ if x.Current }} aria-current="page"{{ end }}>{{ x.Label | html.escape }}</a></li>
+{{ end }}
+</ul>
+</nav>

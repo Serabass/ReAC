@@ -1,0 +1,14 @@
+<main class="page-main"><div class="page">
+<p class="breadcrumb"><a href="../index.html">Index</a></p>
+<h1>{{ name | html.escape }} <small>(bitfield)</small></h1>
+<p>Storage: <code>{{ storage | html.escape }}</code></p>
+{{ if summary }}<p class="prov">{{ summary | html.escape }}</p>{{ end }}
+{{ if note }}<p class="prov">{{ note | html.escape }}</p>{{ end }}
+<h2>Bits</h2>
+<table><thead><tr><th>Bit</th><th>Name</th></tr></thead><tbody>
+{{ for x in bits }}
+<tr><td>{{ x.bit }}</td><td>{{ x.name | html.escape }}</td></tr>
+{{ end }}
+</tbody></table>
+{{ provenance }}
+</div></main>
