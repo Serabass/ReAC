@@ -120,7 +120,13 @@ internal static class HtmlTemplates
 
   public static string RenderCommonStyles() => Load("styles.scriban").Render(new TemplateContext());
 
-  public static string RenderLayout(string pageTitle, string stylesBlock, string sidebarHtml, string mainHtml)
+  public static string RenderLayout(
+    string pageTitle,
+    string stylesBlock,
+    string sidebarHtml,
+    string mainHtml,
+    bool liveReload = false
+  )
   {
     var t = Load("layout.scriban");
     var ctx = new TemplateContext();
@@ -130,6 +136,7 @@ internal static class HtmlTemplates
       ["styles"] = stylesBlock,
       ["sidebar"] = sidebarHtml,
       ["main"] = mainHtml,
+      ["live_reload"] = liveReload,
     };
     ctx.PushGlobal(globals);
     return t.Render(ctx);

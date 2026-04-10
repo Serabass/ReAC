@@ -52,5 +52,31 @@ applyStored();
 }catch(e){}
 })();
 </script>
+{{ if live_reload }}
+<script>
+(function(){
+var u=function(){return'/buildstamp.txt?_='+Date.now();},s=null;
+function reloadFresh(){
+try{
+var u=new URL(location.href);
+u.searchParams.set('_reac',String(Date.now()));
+location.replace(u.toString());
+}catch(e){location.reload();}
+}
+function tick(){
+fetch(u(),{cache:'no-store',credentials:'same-origin'}).then(function(r){
+if(!r.ok)throw new Error('stamp');
+return r.text();
+}).then(function(t){
+t=t.trim();
+if(s===null)s=t;
+else if(t!==s)reloadFresh();
+}).catch(function(){});
+}
+setInterval(tick,700);
+tick();
+})();
+</script>
+{{ end }}
 </body>
 </html>

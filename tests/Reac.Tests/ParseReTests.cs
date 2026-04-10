@@ -6,6 +6,27 @@ namespace Reac.Tests;
 public class ParseReTests
 {
   [Fact]
+  public void Parse_field_quoted_note_with_semicolon_is_not_part_of_type()
+  {
+    const string src = """
+      class T {
+        module M
+        static 0x7D74B8 g : CGarage* "El Swanko Casa; 1 car garage."
+        0x10 armor : float "Armor; see wiki."
+      }
+      """;
+    var doc = ReDocumentParser.ParseDocument(src);
+    var td = Assert.IsType<ReTopLevel.TypeDef>(Assert.Single(doc));
+    var lines = td.Body.ToList();
+    var st = Assert.IsType<ReBodyLine.StaticFieldLine>(lines[1]);
+    Assert.IsType<TypeExpr.Pointer>(st.Type);
+    Assert.Equal("El Swanko Casa; 1 car garage.", st.Note);
+    var fl = Assert.IsType<ReBodyLine.FieldLine>(lines[2]);
+    Assert.IsType<TypeExpr.Scalar>(fl.Type);
+    Assert.Equal("Armor; see wiki.", fl.Note);
+  }
+
+  [Fact]
   public void Parse_static_field_absolute_address()
   {
     const string src = """

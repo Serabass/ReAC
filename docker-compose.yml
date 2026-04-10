@@ -19,7 +19,7 @@ services:
     # Bind mount from Windows host: inotify often misses edits; polling sees .re saves reliably.
     environment:
       DOTNET_USE_POLLING_FILE_WATCHER: "1"
-    command: dotnet watch --project src/Reac/Reac.csproj run -- export-html -p /work
+    command: dotnet watch --project src/Reac/Reac.csproj run -- export-html -p /work --live-reload
 
   # Static site (nginx): docker compose --profile site up site
   # http://localhost:8080
@@ -29,5 +29,6 @@ services:
     image: nginx:1.29.7-alpine
     volumes:
       - ./re/generated/html:/usr/share/nginx/html
+      - ./docker/nginx-site.conf:/etc/nginx/conf.d/default.conf:ro
     ports:
       - "8089:80"

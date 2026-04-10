@@ -491,6 +491,18 @@ public static class ReDocumentParser
     return inner;
   }
 
+  /// <summary>Merges <c>"quoted"</c> field note with optional trailing <c>// slash</c> note.</summary>
+  private static string? MergeFieldNotes(string? quotedNote, string? slashNote)
+  {
+    if (quotedNote == null && slashNote == null)
+      return null;
+    if (quotedNote == null)
+      return slashNote;
+    if (slashNote == null)
+      return quotedNote;
+    return $"{quotedNote} {slashNote}";
+  }
+
   private static List<ReBodyLine> ParseTypeBodyLines(string body)
   {
     var lines = new List<ReBodyLine>();
@@ -534,7 +546,14 @@ public static class ReDocumentParser
       try
       {
         var sp = ReLineParsers.StaticFieldLine.End().Parse(workLine);
-        lines.Add(new ReBodyLine.StaticFieldLine(sp.Address, sp.Name, sp.Type, inlineSlashNote));
+        lines.Add(
+          new ReBodyLine.StaticFieldLine(
+            sp.Address,
+            sp.Name,
+            sp.Type,
+            MergeFieldNotes(sp.QuotedNote, inlineSlashNote)
+          )
+        );
         continue;
       }
       catch (Exception)
@@ -551,12 +570,13 @@ public static class ReDocumentParser
         )
       )
       {
+        var stSplit = FieldTypeNoteSplitter.Split(StripLineComment(stTyp));
         lines.Add(
           new ReBodyLine.StaticFieldLine(
             stAddr,
             stName,
-            TypeExprParser.Parse(StripLineComment(stTyp)),
-            inlineSlashNote
+            TypeExprParser.Parse(stSplit.TypeText),
+            MergeFieldNotes(stSplit.QuotedNote, inlineSlashNote)
           )
         );
         continue;
@@ -566,7 +586,12 @@ public static class ReDocumentParser
       {
         var parsed = ReLineParsers.FieldLine.End().Parse(workLine);
         lines.Add(
-          new ReBodyLine.FieldLine(parsed.Offset, parsed.Name, parsed.Type, inlineSlashNote)
+          new ReBodyLine.FieldLine(
+            parsed.Offset,
+            parsed.Name,
+            parsed.Type,
+            MergeFieldNotes(parsed.QuotedNote, inlineSlashNote)
+          )
         );
         continue;
       }
@@ -574,12 +599,13 @@ public static class ReDocumentParser
       {
         if (TryParseFieldLineRegex(workLine, out var off, out var nm, out var typ))
         {
+          var fldSplit = FieldTypeNoteSplitter.Split(StripLineComment(typ));
           lines.Add(
             new ReBodyLine.FieldLine(
               off,
               nm,
-              TypeExprParser.Parse(StripLineComment(typ)),
-              inlineSlashNote
+              TypeExprParser.Parse(fldSplit.TypeText),
+              MergeFieldNotes(fldSplit.QuotedNote, inlineSlashNote)
             )
           );
           continue;

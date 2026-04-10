@@ -31,12 +31,19 @@ internal static class Program
     var outDir = new Option<DirectoryInfo?>("--out", "Output directory (default: generated/html)");
     outDir.AddAlias("-o");
     exportHtml.AddOption(outDir);
-    exportHtml.SetHandler(ExportHtmlHandler, projectOpt, outDir);
+    var liveReload = new Option<bool>(
+      "--live-reload",
+      () => false,
+      "Poll buildstamp and reload the page (use with watch + static server)"
+    );
+    exportHtml.AddOption(liveReload);
+    exportHtml.SetHandler(ExportHtmlHandler, projectOpt, outDir, liveReload);
 
     var build = new Command("build", "validate + export-html");
     build.AddOption(projectOpt);
     build.AddOption(outDir);
-    build.SetHandler(BuildHandler, projectOpt, outDir);
+    build.AddOption(liveReload);
+    build.SetHandler(BuildHandler, projectOpt, outDir, liveReload);
 
     root.AddCommand(init);
     root.AddCommand(validate);
@@ -75,17 +82,17 @@ internal static class Program
       Environment.Exit(1);
   }
 
-  private static void ExportHtmlHandler(DirectoryInfo? projectOpt, DirectoryInfo? outOpt)
+  private static void ExportHtmlHandler(DirectoryInfo? projectOpt, DirectoryInfo? outOpt, bool liveReload)
   {
     var root = ResolveRoot(projectOpt);
     var ir = ProjectLoader.Load(root);
     var ps = ResolvePointerSize(ir);
     var outPath = outOpt?.FullName ?? Path.Combine(root, ir.Config.GeneratedDir, "html");
-    HtmlExporter.Export(ir, outPath, ps);
+    HtmlExporter.Export(ir, outPath, ps, liveReload);
     Console.WriteLine($"HTML written to {outPath}");
   }
 
-  private static async Task BuildHandler(DirectoryInfo? projectOpt, DirectoryInfo? outOpt)
+  private static async Task BuildHandler(DirectoryInfo? projectOpt, DirectoryInfo? outOpt, bool liveReload)
   {
     var root = ResolveRoot(projectOpt);
     var ir = ProjectLoader.Load(root);
@@ -96,7 +103,7 @@ internal static class Program
     if (issues.Any(x => x.IsError))
       Environment.Exit(1);
     var outPath = outOpt?.FullName ?? Path.Combine(root, ir.Config.GeneratedDir, "html");
-    HtmlExporter.Export(ir, outPath, ps);
+    HtmlExporter.Export(ir, outPath, ps, liveReload);
     Console.WriteLine($"HTML written to {outPath}");
     await Task.CompletedTask;
   }
