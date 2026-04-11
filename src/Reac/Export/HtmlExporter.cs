@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text;
+using Reac.Dsl;
 using Reac.Ir;
 using Reac.Layout;
 
@@ -566,18 +567,6 @@ public static class HtmlExporter
     return new FieldNoteVm(hasNote, note, fb.Count > 0, fb, ev.Count > 0, ev);
   }
 
-  private static string TypeString(TypeExpr e) =>
-    e switch
-    {
-      TypeExpr.Scalar s => s.Name,
-      TypeExpr.Named n => n.Name,
-      TypeExpr.Pointer p => TypeString(p.Inner) + "*",
-      TypeExpr.Array a => $"{TypeString(a.Element)}[{a.Length}]",
-      TypeExpr.Generic g =>
-        $"{g.Name}<{string.Join(", ", g.TypeArguments.Select(TypeString))}>",
-      _ => "?",
-    };
-
   private static string FieldTypeHtml(
     TypeExpr t,
     string? bitfieldTypeName,
@@ -607,7 +596,7 @@ public static class HtmlExporter
       return $"<a href=\"{href}\">{encEn}</a> <span class=\"prov\">({encSc})</span>";
     }
 
-    return System.Net.WebUtility.HtmlEncode(TypeString(t));
+    return System.Net.WebUtility.HtmlEncode(TypeExprFormatter.Format(t));
   }
 
   private static string RenderBitfieldPage(

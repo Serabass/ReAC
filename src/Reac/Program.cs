@@ -1,4 +1,6 @@
 using System.CommandLine;
+using System.Text;
+using Reac.Dsl;
 using Reac.Export;
 using Reac.Ir;
 using Reac.Validate;
@@ -45,10 +47,30 @@ internal static class Program
     build.AddOption(liveReload);
     build.SetHandler(BuildHandler, projectOpt, outDir, liveReload);
 
+    var formatConfigOpt = new Option<FileInfo?>(
+      "--format-config",
+      "Path to reac.format.toml (default: <project>/reac.format.toml if present)"
+    );
+    formatConfigOpt.AddAlias("-F");
+    var formatCheck = new Option<bool>(
+      "--check",
+      () => false,
+      "Exit with error if any .re would change (does not write)"
+    );
+    var format = new Command(
+      "format",
+      "Rewrite .re sources from AST (drops // line comments). Uses reac.format.toml when present."
+    );
+    format.AddOption(projectOpt);
+    format.AddOption(formatConfigOpt);
+    format.AddOption(formatCheck);
+    format.SetHandler(FormatHandler, projectOpt, formatConfigOpt, formatCheck);
+
     root.AddCommand(init);
     root.AddCommand(validate);
     root.AddCommand(exportHtml);
     root.AddCommand(build);
+    root.AddCommand(format);
 
     return await root.InvokeAsync(args);
   }
@@ -107,6 +129,51 @@ internal static class Program
     Console.WriteLine($"HTML written to {outPath}");
     await Task.CompletedTask;
   }
+
+  private static async Task FormatHandler(
+    DirectoryInfo? projectOpt,
+    FileInfo? formatConfigOpt,
+    bool check
+  )
+  {
+    var root = ResolveRoot(projectOpt);
+    var cfg = ProjectMeta.Load(Path.Combine(root, "project.toml"));
+    var opts = FormatConfigLoader.LoadForProject(root, formatConfigOpt?.FullName);
+
+    var raw = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+    foreach (var path in ProjectLoader.EnumerateReSourceFiles(root, cfg))
+      raw[path] = File.ReadAllText(path);
+    var processed = RePreprocessor.ProcessAllFiles(raw, cfg.PredefinedMacros);
+
+    var utf8NoBom = new UTF8Encoding(false);
+    var changed = 0;
+    foreach (var path in ProjectLoader.EnumerateReSourceFiles(root, cfg))
+    {
+      var tops = ReDocumentParser.ParseDocument(processed[path]);
+      var formatted = ReDocumentFormatter.FormatDocument(tops, opts);
+      var normalizedOut = NormalizeNewlines(formatted);
+      if (check)
+      {
+        var disk = NormalizeNewlines(File.ReadAllText(path));
+        if (normalizedOut != disk)
+        {
+          Console.Error.WriteLine(path);
+          changed++;
+        }
+      }
+      else
+      {
+        File.WriteAllText(path, normalizedOut, utf8NoBom);
+      }
+    }
+
+    if (check && changed > 0)
+      Environment.Exit(1);
+    await Task.CompletedTask;
+  }
+
+  private static string NormalizeNewlines(string s) =>
+    s.Replace("\r\n", "\n", StringComparison.Ordinal).Replace("\r", "\n", StringComparison.Ordinal);
 
   private static string ResolveRoot(DirectoryInfo? projectOpt)
   {

@@ -6,6 +6,23 @@ namespace Reac.Ir;
 
 public static class ProjectLoader
 {
+  /// <summary>All <c>*.re</c> under targets, modules, types dirs (in that order), sorted per directory tree.</summary>
+  public static IEnumerable<string> EnumerateReSourceFiles(string projectRoot, ProjectConfig cfg)
+  {
+    foreach (var rel in new[] { cfg.TargetsDir, cfg.ModulesDir, cfg.TypesDir })
+    {
+      var dir = Path.Combine(projectRoot, rel);
+      if (!Directory.Exists(dir))
+        continue;
+      foreach (
+        var f in Directory
+          .EnumerateFiles(dir, "*.re", SearchOption.AllDirectories)
+          .OrderBy(x => x, StringComparer.OrdinalIgnoreCase)
+      )
+        yield return f;
+    }
+  }
+
   public static ProjectIr Load(string projectRoot)
   {
     var projectToml = Path.Combine(projectRoot, "project.toml");
