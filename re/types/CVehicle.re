@@ -1,6 +1,6 @@
+@source("https://gtamods.com/wiki/Memory_Addresses_(VC)#CVehicle")
 class CVehicle : CPhysical size 0x00C {
   module Core.Main
-  source "https://gtamods.com/wiki/Memory_Addresses_(VC)#CVehicle"
   static 0x0069A61A carFriction : uint8
   0x23C currentRadioStation : eRadioStation
   0x240 horn                : bool
@@ -9,8 +9,8 @@ class CVehicle : CPhysical size 0x00C {
 }
 
 enum eVehicleType : dword {
-  source "https://gtamods.com/wiki/Memory_Addresses_(VC)#CVehicle"
-  summary "Vehicle Type"
+  @source("https://gtamods.com/wiki/Memory_Addresses_(VC)#CVehicle")
+  @summary("Vehicle Type")
   0x000 general
   0x001 boat
   0x002 train
@@ -20,8 +20,8 @@ enum eVehicleType : dword {
 }
 
 enum eRadioStation : byte {
-  source "https://gtamods.com/wiki/Memory_Addresses_(VC)#CVehicle"
-  summary "Radio Station"
+  @source("https://gtamods.com/wiki/Memory_Addresses_(VC)#CVehicle")
+  @summary("Radio Station")
   0x000 wildStyle
   0x001 flashFm
   0x002 kChat

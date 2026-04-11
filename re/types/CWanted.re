@@ -1,6 +1,6 @@
 bitfield WantedActivityFlags : byte {
-  source "https://gtamods.com/wiki/Memory_Addresses_(VC)#CWanted"
-  summary "CWanted Activity fields"
+  @source("https://gtamods.com/wiki/Memory_Addresses_(VC)#CWanted")
+  @summary("CWanted Activity fields")
   0x000 bCopsIgnorePlayer
   0x001 bEveryoneIgnorePlayer
   0x002 bSWATRequired
@@ -8,9 +8,9 @@ bitfield WantedActivityFlags : byte {
   0x004 bArmyRequired
 }
 
+@source("https://gtamods.com/wiki/Memory_Addresses_(VC)#CWanted")
 struct CWanted {
   module Core.Main
-  source "https://gtamods.com/wiki/Memory_Addresses_(VC)#CWanted"
   0x004D1E90 SetMaximumWantedLevel(int) : void "Sets the maximum wanted level"
   0x004D1E90 AreArmyRequired() : bool "Checks if Army is required"
   0x004D1E40 AreFbiRequired() : bool "Checks if FBI is required"

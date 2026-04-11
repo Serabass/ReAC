@@ -47,21 +47,21 @@ target example_win32 {
 
   private const string ModuleSample = """
 module Sample.Core {
-  summary "Illustrative module for REaC samples (game-agnostic tooling; data is only an example)."
+  @summary("Illustrative module for REaC samples (game-agnostic tooling; data is only an example).")
 }
 """;
 
   private const string ModuleRw = """
 module RenderWare.Core {
-  summary "Third-party engine placeholders (optional; rename or remove in your KB)."
+  @summary("Third-party engine placeholders (optional; rename or remove in your KB).")
 }
 """;
 
   private const string CVector = """
+@source("https://example.com/reverse/sample-memory")
+@source("https://example.com/reverse/sample-functions")
 struct CVector size 0x0C {
   module Sample.Core
-  source "https://example.com/reverse/sample-memory"
-  source "https://example.com/reverse/sample-functions"
   0x000 x : float
   0x004 y : float
   0x008 z : float
@@ -69,10 +69,10 @@ struct CVector size 0x0C {
 """;
 
   private const string CMatrix = """
+@source("https://example.com/reverse/sample-memory")
+@source("https://example.com/reverse/sample-functions")
 struct CMatrix size 0x40 {
   module Sample.Core
-  source "https://example.com/reverse/sample-memory"
-  source "https://example.com/reverse/sample-functions"
   0x000 right : CVector
   0x010 up : CVector
   0x020 at : CVector
@@ -81,12 +81,12 @@ struct CMatrix size 0x40 {
 """;
 
   private const string CWeapon = """
+@source("https://example.com/reverse/sample-memory")
+@source("https://example.com/reverse/sample-functions")
 struct CWeapon size 0x18 {
   module Sample.Core
-  source "https://example.com/reverse/sample-memory"
-  source "https://example.com/reverse/sample-functions"
+  @note("Illustrative native entry; replace address/signature for your build.")
   fn 0x005D45E0 Fire(CEntity*, CVector*) : void // sample: main fire dispatch
-  note fn Fire "Illustrative native entry; replace address/signature for your build."
   0x000 weaponType : eWeaponType
   0x004 status : uint32
   0x008 clip : uint32
@@ -95,12 +95,12 @@ struct CWeapon size 0x18 {
 """;
 
   private const string CWanted = """
+@source("https://example.com/reverse/sample-memory")
+@source("https://example.com/reverse/sample-functions")
 struct CWanted size 0x24 {
   module Sample.Core
-  source "https://example.com/reverse/sample-memory"
-  source "https://example.com/reverse/sample-functions"
+  @note("Illustrative; tie to your script/runtime docs if applicable.")
   fn 0x004D1E90 SetMaximumWantedLevel(int) : void
-  note fn SetMaximumWantedLevel "Illustrative; tie to your script/runtime docs if applicable."
   0x000 chaos : uint32
   0x01E activity : byte
   0x020 hudLevel : uint32
@@ -108,15 +108,15 @@ struct CWanted size 0x24 {
 """;
 
   private const string CEntity = """
+@source("https://example.com/reverse/sample-memory")
+@source("https://example.com/reverse/sample-functions")
 class CEntity size 0x64 {
   module Sample.Core
-  source "https://example.com/reverse/sample-memory"
-  source "https://example.com/reverse/sample-functions"
+  @note("Sets render/collision model index (sample).")
   fn 0x004898B0 SetModelIndex(uint) : void
-  note fn SetModelIndex "Sets render/collision model index (sample)."
   fn 0x00487D10 GetDistanceFromCentreOfMassToBaseOfModel() : float
   0x000 vtable : pointer
-  note vtable "Virtual dispatch table; typical slots include destructor, Remove, Add, Render (names depend on your binary)."
+  @note(vtable "Virtual dispatch table; typical slots include destructor, Remove, Add, Render (names depend on your binary).")
   0x004 matrix : CMatrix
   0x044 rwObject : pointer
   0x048 rpAtomic : pointer
@@ -134,12 +134,12 @@ class CEntity size 0x64 {
 """;
 
   private const string CPhysical = """
+@source("https://example.com/reverse/sample-memory")
+@source("https://example.com/reverse/sample-functions")
 class CPhysical : CEntity size 0x120 {
   module Sample.Core
-  source "https://example.com/reverse/sample-memory"
-  source "https://example.com/reverse/sample-functions"
+  @note("Returns whether this physical is colliding with the given entity.")
   fn 0x004B9010 GetHasCollidedWith(CEntity*) : bool
-  note fn GetHasCollidedWith "Returns whether this physical is colliding with the given entity."
   0x064 audioEntity : uint32
   0x06C lastCollisionTime : uint32
   0x070 moveSpeed : CVector
@@ -160,8 +160,8 @@ class CPhysical : CEntity size 0x120 {
 
   private const string CObjectFlags = """
 bitfield CObjectFlags1 : byte {
-  source "https://gtamods.com/wiki/Memory_Addresses_(VC)#CObject"
-  summary "First object flags byte (VC); names from GTAMods wiki."
+  @source("https://gtamods.com/wiki/Memory_Addresses_(VC)#CObject")
+  @summary("First object flags byte (VC); names from GTAMods wiki.")
   0 bIsPickupObject
   1 bDoCircleEffect
   2 bRenderPickupQuantity
@@ -173,8 +173,8 @@ bitfield CObjectFlags1 : byte {
 }
 
 bitfield CObjectFlags2 : byte {
-  source "https://gtamods.com/wiki/Memory_Addresses_(VC)#CObject"
-  summary "Second object flags byte (VC); names from GTAMods wiki."
+  @source("https://gtamods.com/wiki/Memory_Addresses_(VC)#CObject")
+  @summary("Second object flags byte (VC); names from GTAMods wiki.")
   0 bSpecialLighting
   1 bNoVehicleCollisionWhenDetached
 }
@@ -183,8 +183,8 @@ bitfield CObjectFlags2 : byte {
 
   private const string EWeaponType = """
 enum eWeaponType : uint32 {
-  source "https://example.com/reverse/sample-memory"
-  summary "Illustrative weapon type ids (sample; replace with your game's table)."
+  @source("https://example.com/reverse/sample-memory")
+  @summary("Illustrative weapon type ids (sample; replace with your game's table).")
   0 WEAPON_UNARMED "No weapon equipped."
   1 WEAPON_BASEBALLBAT
   22 WEAPON_PISTOL "Standard sidearm."
@@ -193,11 +193,11 @@ enum eWeaponType : uint32 {
 """;
 
   private const string CObject = """
+@source("https://example.com/reverse/sample-memory")
+@source("https://example.com/reverse/sample-functions")
+@note("Layout follows GTAMods Memory_Addresses_(VC) CObject; matDummyInitial is 72 B in that game.")
 class CObject : CPhysical size 0x1A0 {
   module Sample.Core
-  source "https://example.com/reverse/sample-memory"
-  source "https://example.com/reverse/sample-functions"
-  note "Layout follows GTAMods Memory_Addresses_(VC) CObject; matDummyInitial is 72 B in that game."
   0x120 matDummyInitial : byte[72]
   0x168 fAttachForce : float
   0x16C byteObjectType : byte
@@ -225,19 +225,19 @@ class CObject : CPhysical size 0x1A0 {
 """;
 
   private const string CPed = """
+@source("https://example.com/reverse/sample-memory")
+@source("https://example.com/reverse/sample-functions")
 class CPed : CPhysical {
   module Sample.Core
-  source "https://example.com/reverse/sample-memory"
-  source "https://example.com/reverse/sample-functions"
+  @note("Sets ammo for a weapon slot (sample).")
   fn 0x004FF780 SetAmmo(eWeaponType, uint) : void
   fn 0x004FF840 GrantAmmo(eWeaponType, uint) : void
-  note fn SetAmmo "Sets ammo for a weapon slot (sample)."
   static 0x94AD28 Player : CPed*
-  note Player "Singleton / global; points to the active player (instance of CPed)."
+  @note(Player "Singleton / global; points to the active player (instance of CPed).")
   0x354 health : float
-  note health "Current health; game scripts or natives may write this field."
+  @note(health "Current health; game scripts or natives may write this field.")
   0x358 armor : float
-  note armor "Armor value; document script bindings in your own notes if needed."
+  @note(armor "Armor value; document script bindings in your own notes if needed.")
   0x3A8 lastVehicle : pointer
   0x408 weapons : CWeapon[10]
   0x508 targetedPed : CPed*

@@ -1,6 +1,6 @@
+@source("https://gtamods.com/wiki/Memory_Addresses_(VC)#CAutomobile")
 class CAutomobile : CVehicle {
   module Core.Main
-  source "https://gtamods.com/wiki/Memory_Addresses_(VC)#CAutomobile"
   0x2A4 engineState          : byte
   0x2A5 leftFrontWheelState  : eWheelState
   0x2A6 leftRearWheelState   : eWheelState
@@ -12,8 +12,8 @@ class CAutomobile : CVehicle {
 }
 
 enum eWheelState : byte {
-  source "https://gtamods.com/wiki/Memory_Addresses_(VC)#CAutomobile"
-  summary "Wheel State"
+  @source("https://gtamods.com/wiki/Memory_Addresses_(VC)#CAutomobile")
+  @summary("Wheel State")
   0x000 normal
   0x001 popped
   0x002 none

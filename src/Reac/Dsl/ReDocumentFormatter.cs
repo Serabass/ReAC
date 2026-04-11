@@ -95,9 +95,49 @@ public static class ReDocumentFormatter
     sb.Append(ind).Append("}\n");
   }
 
+  /// <summary>All <c>@source</c>/<c>@summary</c>/<c>@note</c> lines go before <c>class</c>; remaining body lines keep order.</summary>
+  private static (List<ReBodyLine> PrefixLines, List<ReBodyLine> BodyRest) SplitLeadingTypeMetadata(
+    IReadOnlyList<ReBodyLine> body
+  )
+  {
+    var prefix = new List<ReBodyLine>();
+    var rest = new List<ReBodyLine>();
+    foreach (var l in body)
+    {
+      if (l is ReBodyLine.SourceLine or ReBodyLine.SummaryLine or ReBodyLine.NoteEntityLine)
+        prefix.Add(l);
+      else
+        rest.Add(l);
+    }
+
+    return (prefix, rest);
+  }
+
+  private static void AppendTypeMetadataDecorator(StringBuilder sb, ReBodyLine line, string ind)
+  {
+    switch (line)
+    {
+      case ReBodyLine.SourceLine sl:
+        sb.Append(ind).Append("@source(").Append(ReQuotedString.DoubleQuote(sl.Url)).Append(")\n");
+        break;
+      case ReBodyLine.SummaryLine sm:
+        sb.Append(ind).Append("@summary(").Append(ReQuotedString.DoubleQuote(sm.Text)).Append(")\n");
+        break;
+      case ReBodyLine.NoteEntityLine ne:
+        sb.Append(ind).Append("@note(").Append(ReQuotedString.DoubleQuote(ne.Text)).Append(")\n");
+        break;
+      default:
+        throw new ArgumentOutOfRangeException(nameof(line));
+    }
+  }
+
   private static void AppendTypeDef(StringBuilder sb, ReTopLevel.TypeDef td, FormatOptions o, int level)
   {
     var ind = o.Indent(level);
+    var (prefix, innerBody) = SplitLeadingTypeMetadata(td.Body);
+    foreach (var p in prefix)
+      AppendTypeMetadataDecorator(sb, p, ind);
+
     sb.Append(ind).Append(td.Kind == TypeKind.Class ? "class " : "struct ").Append(td.Name);
     if (td.Parent != null)
       sb.Append(" : ").Append(td.Parent);
@@ -108,7 +148,7 @@ public static class ReDocumentFormatter
     }
 
     sb.Append(" {\n");
-    AppendBodyLines(sb, td.Body, o, level + 1);
+    AppendBodyLines(sb, innerBody, o, level + 1);
     sb.Append(ind).Append("}\n");
   }
 
@@ -159,11 +199,11 @@ public static class ReDocumentFormatter
   {
     var ind = o.Indent(level);
     foreach (var url in sourceUrls)
-      sb.Append(ind).Append("source ").Append(ReQuotedString.DoubleQuote(url)).Append('\n');
+      sb.Append(ind).Append("@source(").Append(ReQuotedString.DoubleQuote(url)).Append(")\n");
     if (summary != null)
-      sb.Append(ind).Append("summary ").Append(ReQuotedString.DoubleQuote(summary)).Append('\n');
+      sb.Append(ind).Append("@summary(").Append(ReQuotedString.DoubleQuote(summary)).Append(")\n");
     if (note != null)
-      sb.Append(ind).Append("note ").Append(ReQuotedString.DoubleQuote(note)).Append('\n');
+      sb.Append(ind).Append("@note(").Append(ReQuotedString.DoubleQuote(note)).Append(")\n");
 
     foreach (var (value, name, desc) in OrderNamedNumericTuples(values, lineSort))
     {
@@ -218,8 +258,8 @@ public static class ReDocumentFormatter
   }
 
   /// <summary>
-  /// When any sort mode is active: header lines (module, source, summary, note) first in file order,
-  /// then fields (sorted) with <c>note field</c> lines after each name, then statics, then functions with <c>note fn</c>.
+  /// When any sort mode is active: header lines (module, <c>@source</c>/<c>@summary</c>/<c>@note</c> as body lines) first in file order,
+  /// then fields (sorted) with <c>@note(field ...)</c> lines after each name, then statics, then functions (with preceding <c>@note</c> on <see cref="ReBodyLine.FunctionLine"/>).
   /// </summary>
   private static List<ReBodyLine> ApplyBodySort(IReadOnlyList<ReBodyLine> body, FormatOptions o)
   {
@@ -232,7 +272,6 @@ public static class ReDocumentFormatter
 
     var header = new List<ReBodyLine>();
     var notesByField = new Dictionary<string, List<ReBodyLine.NoteFieldLine>>(StringComparer.OrdinalIgnoreCase);
-    var notesByFn = new Dictionary<string, List<ReBodyLine.NoteFunctionLine>>(StringComparer.OrdinalIgnoreCase);
     var fields = new List<ReBodyLine>();
     var statics = new List<ReBodyLine.StaticFieldLine>();
     var funcs = new List<ReBodyLine.FunctionLine>();
@@ -249,15 +288,6 @@ public static class ReDocumentFormatter
           }
 
           lf.Add(nf);
-          break;
-        case ReBodyLine.NoteFunctionLine nfn:
-          if (!notesByFn.TryGetValue(nfn.FunctionName, out var lfn))
-          {
-            lfn = new List<ReBodyLine.NoteFunctionLine>();
-            notesByFn[nfn.FunctionName] = lfn;
-          }
-
-          lfn.Add(nfn);
           break;
         case ReBodyLine.FieldLine:
         case ReBodyLine.InlineBitfieldFieldLine:
@@ -358,24 +388,42 @@ public static class ReDocumentFormatter
     result.AddRange(statics);
 
     foreach (var fn in funcs)
-    {
       result.Add(fn);
-      if (notesByFn.TryGetValue(fn.Name, out var ns))
-      {
-        result.AddRange(ns);
-        notesByFn.Remove(fn.Name);
-      }
+
+    return result;
+  }
+
+  /// <summary>Merges legacy <c>note fn Name \"...\"</c> lines into <see cref="ReBodyLine.FunctionLine.Note"/> so output uses <c>@note</c> before the address line.</summary>
+  private static List<ReBodyLine> MergeLegacyNoteFunctionLines(IReadOnlyList<ReBodyLine> body)
+  {
+    var byName = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+    foreach (var line in body)
+    {
+      if (line is ReBodyLine.NoteFunctionLine nfn)
+        byName[nfn.FunctionName] = nfn.Text;
     }
 
-    foreach (var kv in notesByFn)
-      result.AddRange(kv.Value);
+    if (byName.Count == 0)
+      return new List<ReBodyLine>(body);
+
+    var result = new List<ReBodyLine>(body.Count);
+    foreach (var line in body)
+    {
+      if (line is ReBodyLine.NoteFunctionLine)
+        continue;
+      if (line is ReBodyLine.FunctionLine fn && byName.TryGetValue(fn.Name, out var nt))
+        result.Add(fn with { Note = fn.Note ?? nt });
+      else
+        result.Add(line);
+    }
 
     return result;
   }
 
   private static void AppendBodyLines(StringBuilder sb, IReadOnlyList<ReBodyLine> body, FormatOptions o, int level)
   {
-    var ordered = ApplyBodySort(body, o);
+    var merged = MergeLegacyNoteFunctionLines(body);
+    var ordered = ApplyBodySort(merged, o);
     var maxW = o.AlignFieldTypes ? MaxFieldNameWidth(ordered) : 0;
     foreach (var line in ordered)
       AppendBodyLine(sb, line, o, level, maxW);
@@ -396,13 +444,13 @@ public static class ReDocumentFormatter
         sb.Append(ind).Append("module ").Append(ml.ModuleName).Append('\n');
         break;
       case ReBodyLine.SourceLine sl:
-        sb.Append(ind).Append("source ").Append(ReQuotedString.DoubleQuote(sl.Url)).Append('\n');
+        sb.Append(ind).Append("@source(").Append(ReQuotedString.DoubleQuote(sl.Url)).Append(")\n");
         break;
       case ReBodyLine.SummaryLine sm:
-        sb.Append(ind).Append("summary ").Append(ReQuotedString.DoubleQuote(sm.Text)).Append('\n');
+        sb.Append(ind).Append("@summary(").Append(ReQuotedString.DoubleQuote(sm.Text)).Append(")\n");
         break;
       case ReBodyLine.NoteEntityLine ne:
-        sb.Append(ind).Append("note ").Append(ReQuotedString.DoubleQuote(ne.Text)).Append('\n');
+        sb.Append(ind).Append("@note(").Append(ReQuotedString.DoubleQuote(ne.Text)).Append(")\n");
         break;
       case ReBodyLine.FieldLine fl:
         sb.Append(ind).Append(ReHexFormat.FormatInt(fl.Offset, HexKind.Offset, o)).Append(' ');
@@ -430,23 +478,19 @@ public static class ReDocumentFormatter
         break;
       case ReBodyLine.NoteFieldLine nf:
         sb.Append(ind)
-          .Append("note ")
+          .Append("@note(")
           .Append(nf.FieldName)
           .Append(' ')
           .Append(ReQuotedString.DoubleQuote(nf.Text))
-          .Append('\n');
+          .Append(")\n");
         break;
-      case ReBodyLine.NoteFunctionLine nff:
-        sb.Append(ind)
-          .Append("note fn ")
-          .Append(nff.FunctionName)
-          .Append(' ')
-          .Append(ReQuotedString.DoubleQuote(nff.Text))
-          .Append('\n');
-        break;
+      case ReBodyLine.NoteFunctionLine:
+        throw new InvalidOperationException("NoteFunctionLine must be merged before formatting.");
       case ReBodyLine.FunctionLine fn:
         foreach (var d in fn.Decorators)
           sb.Append(ind).Append('@').Append(d).Append('\n');
+        if (fn.Note != null)
+          sb.Append(ind).Append("@note(").Append(ReQuotedString.DoubleQuote(fn.Note)).Append(")\n");
         sb.Append(ind)
           .Append(ReHexFormat.FormatInt(fn.Address, HexKind.Address, o))
           .Append(' ')
@@ -456,8 +500,6 @@ public static class ReDocumentFormatter
           .Append(')');
         if (fn.ReturnType != null)
           sb.Append(" : ").Append(fn.ReturnType);
-        if (fn.Note != null)
-          sb.Append(" // ").Append(fn.Note);
         sb.Append('\n');
         break;
       case ReBodyLine.InlineBitfieldFieldLine ib:

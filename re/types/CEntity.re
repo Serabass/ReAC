@@ -1,11 +1,11 @@
+@source("https://gtamods.com/wiki/Memory_Addresses_(VC)#CEntity")
 class CEntity size 0x064 {
   module Core.Main
-  source "https://gtamods.com/wiki/Memory_Addresses_(VC)#CEntity"
+  @note("Sets render/collision model index (sample).")
   0x004898B0 SetModelIndex(uint) : void
-  note fn SetModelIndex "Sets render/collision model index (sample)."
   0x00487D10 GetDistanceFromCentreOfMassToBaseOfModel() : float
   0x000 vtable     : pointer
-  note vtable "Virtual dispatch table; typical slots include destructor, Remove, Add, Render (names depend on your binary)."
+  @note(vtable "Virtual dispatch table; typical slots include destructor, Remove, Add, Render (names depend on your binary).")
   0x004 matrix     : CMatrix
   0x044 rwObject   : pointer
   0x048 rpAtomic   : pointer

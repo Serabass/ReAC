@@ -1,3 +1,4 @@
+using Reac;
 using Reac.Dsl;
 using Reac.Ir;
 
@@ -33,7 +34,7 @@ public class ParseReTests
       class CPed : CPhysical {
         module Sample.Core
         static 0x94AD28 Player : CPed* // global
-        note Player "doc note wins over slash comment"
+        @note(Player "doc note wins over slash comment")
         0x10 health : float
       }
       """;
@@ -166,7 +167,7 @@ public class ParseReTests
   {
     const string src = """
       enum MyKind : byte {
-        summary "Kinds of thing."
+        @summary("Kinds of thing.")
         0 Alpha "First."
         10 Beta
       }
@@ -223,8 +224,8 @@ public class ParseReTests
     const string src = """
       struct T size 0x4 {
         module M
-        source "https://a.example/mem"
-        source "https://b.example/fn"
+        @source("https://a.example/mem")
+        @source("https://b.example/fn")
         0x0 x : uint32
       }
       """;
@@ -240,8 +241,8 @@ public class ParseReTests
     const string src = """
       struct S {
         module M
+        @note("long note")
         fn 0x005D45E0 Fire(CEntity*, CVector*) : void // inline
-        note fn Fire "long note"
         fn 0x004FF780 SetAmmo(eWeaponType, uint) : void
       }
       """;
@@ -253,10 +254,8 @@ public class ParseReTests
     Assert.Equal("Fire", fns[0].Name);
     Assert.Equal("CEntity*, CVector*", fns[0].Parameters);
     Assert.Equal("void", fns[0].ReturnType);
-    Assert.Equal("inline", fns[0].Note);
-    var nfn = Assert.Single(td.Body.OfType<ReBodyLine.NoteFunctionLine>());
-    Assert.Equal("Fire", nfn.FunctionName);
-    Assert.Equal("long note", nfn.Text);
+    Assert.Equal("long note", fns[0].Note);
+    Assert.Empty(td.Body.OfType<ReBodyLine.NoteFunctionLine>());
   }
 
   [Fact]
@@ -369,7 +368,7 @@ public class ParseReTests
       class Obj {
         module M
         0x10 flags : bitfield : byte {
-          summary "byte of flags"
+          @summary("byte of flags")
           0 bA "first"
           1 bB
         }
@@ -402,6 +401,59 @@ public class ParseReTests
     var td = Assert.IsType<ReTopLevel.TypeDef>(Assert.Single(doc));
     var fn = Assert.Single(td.Body.OfType<ReBodyLine.FunctionLine>());
     Assert.Equal(new[] { "stdcall", "nothrow" }, fn.Decorators);
+  }
+
+  [Fact]
+  public void Format_CPed_moves_source_before_class()
+  {
+    var root = TestPaths.RepoRoot();
+    var path = Path.Combine(root, "re", "types", "CPed.re");
+    var raw = File.ReadAllText(path);
+    var cfg = ProjectMeta.Load(Path.Combine(root, "project.toml"));
+    var processed = RePreprocessor.ProcessAllFiles(
+      new Dictionary<string, string> { [path] = raw },
+      cfg.PredefinedMacros
+    );
+    var tops = ReDocumentParser.ParseDocument(processed[path]);
+    var td = tops.OfType<ReTopLevel.TypeDef>().First(t => t.Name == "CPed");
+    Assert.NotEmpty(td.Body.OfType<ReBodyLine.SourceLine>());
+    var formatted = ReDocumentFormatter.FormatDocument(tops, FormatOptions.Default);
+    Assert.StartsWith("@source(", formatted.TrimStart(), StringComparison.Ordinal);
+  }
+
+  [Fact]
+  public void Parse_module_two_minimal_decorator_lines()
+  {
+    var src = "module X {\n  @summary(\"a\")\n  @source(\"b\")\n}\n";
+    var doc = ReDocumentParser.ParseDocument(src);
+    var m = Assert.IsType<ReTopLevel.Module>(Assert.Single(doc));
+    Assert.Equal(2, m.Body.Count);
+  }
+
+  [Fact]
+  public void Parse_module_Core_Main_like_decorators()
+  {
+    var src =
+      "module Core.Main {\n"
+      + "  @summary(\"Illustrative module for REaC samples (game-agnostic tooling; data is only an example).\")\n"
+      + "  @source(\"https://github.com/Serabass/reac\")\n"
+      + "}\n";
+    var doc = ReDocumentParser.ParseDocument(src);
+    var m = Assert.IsType<ReTopLevel.Module>(Assert.Single(doc));
+    Assert.Equal(2, m.Body.Count);
+  }
+
+  [Fact]
+  public void Parse_at_summary_with_parentheses_in_string()
+  {
+    const string src = """
+      module X {
+        @summary("Illustrative module for REaC samples (game-agnostic tooling; data is only an example).")
+      }
+      """;
+    var doc = ReDocumentParser.ParseDocument(src);
+    var m = Assert.IsType<ReTopLevel.Module>(Assert.Single(doc));
+    Assert.Single(m.Body);
   }
 
   [Fact]

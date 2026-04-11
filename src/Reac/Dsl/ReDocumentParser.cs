@@ -40,15 +40,23 @@ public static class ReDocumentParser
       if (i >= text.Length)
         break;
 
+      var typePrefix = new List<ReBodyLine>();
+      while (TryConsumeLeadingTypeDecoratorLine(text, ref i, out var prefixLine))
+        typePrefix.Add(prefixLine);
+
+      StringLiterals.SkipNoise(text, ref i);
+      if (i >= text.Length)
+        break;
+
       var kw = PeekKeyword(text, i);
       if (kw == "target")
         list.Add(ParseTarget(text, ref i));
       else if (kw == "module")
         list.Add(ParseModule(text, ref i));
       else if (kw == "class")
-        list.Add(ParseType(text, ref i, TypeKind.Class));
+        list.Add(ParseType(text, ref i, TypeKind.Class, typePrefix));
       else if (kw == "struct")
-        list.Add(ParseType(text, ref i, TypeKind.Struct));
+        list.Add(ParseType(text, ref i, TypeKind.Struct, typePrefix));
       else if (kw == "bitfield")
         list.Add(ParseBitfieldTopLevel(text, ref i));
       else if (kw == "enum")
@@ -60,6 +68,106 @@ public static class ReDocumentParser
     }
 
     return list;
+  }
+
+  /// <summary>Reads one line of <c>@source</c>/<c>@summary</c>/<c>@note("...")</c> before <c>class</c>/<c>struct</c>.</summary>
+  private static bool TryConsumeLeadingTypeDecoratorLine(string text, ref int i, out ReBodyLine line)
+  {
+    line = null!;
+    var saved = i;
+    StringLiterals.SkipNoise(text, ref i);
+    if (i >= text.Length || text[i] != '@')
+    {
+      i = saved;
+      return false;
+    }
+
+    var lineBegin = i;
+    var lineEnd = lineBegin;
+    while (lineEnd < text.Length && text[lineEnd] != '\n' && text[lineEnd] != '\r')
+      lineEnd++;
+    var trimmed = text.Substring(lineBegin, lineEnd - lineBegin).Trim();
+    var ni = lineEnd;
+    if (ni < text.Length && text[ni] == '\r')
+      ni++;
+    if (ni < text.Length && text[ni] == '\n')
+      ni++;
+
+    if (!TryParseLeadingTypeMetadataLine(trimmed, out line))
+    {
+      i = saved;
+      return false;
+    }
+
+    i = ni;
+    return true;
+  }
+
+  /// <summary>Only metadata decorators valid before <c>class</c>/<c>struct</c> (not bare <c>@stdcall</c>).</summary>
+  private static bool TryParseLeadingTypeMetadataLine(string trimmed, out ReBodyLine line)
+  {
+    line = null!;
+    if (trimmed.Length < 2 || trimmed[0] != '@')
+      return false;
+    var j = 1;
+    if (j >= trimmed.Length || !(char.IsLetter(trimmed[j]) || trimmed[j] == '_'))
+      return false;
+    var nameStart = j;
+    while (j < trimmed.Length && (char.IsLetterOrDigit(trimmed[j]) || trimmed[j] == '_'))
+      j++;
+    var decName = trimmed.Substring(nameStart, j - nameStart);
+    StringLiterals.SkipNoise(trimmed, ref j);
+    if (j >= trimmed.Length || trimmed[j] != '(')
+      return false;
+    j++;
+    StringLiterals.SkipNoise(trimmed, ref j);
+
+    if (decName.Equals("source", StringComparison.OrdinalIgnoreCase))
+    {
+      if (!StringLiterals.TryParse(trimmed, ref j, out var url))
+        throw new ParseException("leading @source: bad string");
+      StringLiterals.SkipNoise(trimmed, ref j);
+      if (j >= trimmed.Length || trimmed[j] != ')')
+        throw new ParseException("leading @source: expected ')'");
+      j++;
+      StringLiterals.SkipNoise(trimmed, ref j);
+      if (j < trimmed.Length)
+        throw new ParseException("leading @source: trailing content");
+      line = new ReBodyLine.SourceLine(url);
+      return true;
+    }
+
+    if (decName.Equals("summary", StringComparison.OrdinalIgnoreCase))
+    {
+      if (!StringLiterals.TryParse(trimmed, ref j, out var sm))
+        throw new ParseException("leading @summary: bad string");
+      StringLiterals.SkipNoise(trimmed, ref j);
+      if (j >= trimmed.Length || trimmed[j] != ')')
+        throw new ParseException("leading @summary: expected ')'");
+      j++;
+      StringLiterals.SkipNoise(trimmed, ref j);
+      if (j < trimmed.Length)
+        throw new ParseException("leading @summary: trailing content");
+      line = new ReBodyLine.SummaryLine(sm);
+      return true;
+    }
+
+    if (decName.Equals("note", StringComparison.OrdinalIgnoreCase))
+    {
+      if (!StringLiterals.TryParse(trimmed, ref j, out var nt))
+        throw new ParseException("leading @note: bad string");
+      StringLiterals.SkipNoise(trimmed, ref j);
+      if (j >= trimmed.Length || trimmed[j] != ')')
+        throw new ParseException("leading @note: expected ')'");
+      j++;
+      StringLiterals.SkipNoise(trimmed, ref j);
+      if (j < trimmed.Length)
+        throw new ParseException("leading @note: trailing content");
+      line = new ReBodyLine.NoteEntityLine(nt);
+      return true;
+    }
+
+    return false;
   }
 
   private static string PeekKeyword(string s, int i)
@@ -236,7 +344,12 @@ public static class ReDocumentParser
     return new ReTopLevel.Module(name, summary, note, lines);
   }
 
-  private static ReTopLevel ParseType(string text, ref int i, TypeKind kind)
+  private static ReTopLevel ParseType(
+    string text,
+    ref int i,
+    TypeKind kind,
+    IReadOnlyList<ReBodyLine>? leadingDecorators = null
+  )
   {
     ExpectKeyword(text, ref i, kind == TypeKind.Class ? "class" : "struct");
     var name = ParseIdent(text, ref i);
@@ -262,6 +375,8 @@ public static class ReDocumentParser
 
     var body = ParseBlock(text, ref i);
     var lines = ParseTypeBodyLines(body);
+    if (leadingDecorators is { Count: > 0 })
+      lines = leadingDecorators.Concat(lines).ToList();
     return new ReTopLevel.TypeDef(kind, name, parent, declaredSize, lines);
   }
 
@@ -313,36 +428,32 @@ public static class ReDocumentParser
       if (string.IsNullOrWhiteSpace(line) || line.StartsWith("//", StringComparison.Ordinal))
         continue;
 
-      var fw = FirstWord(line);
-      if (fw.Equals("source", StringComparison.OrdinalIgnoreCase))
+      var bitfieldLine = line.Trim();
+      if (bitfieldLine.Length > 0 && bitfieldLine[0] == '@')
       {
-        var r = line.AsSpan(6).Trim();
-        var si = 0;
-        var s = r.ToString();
-        if (!StringLiterals.TryParse(s, ref si, out var url))
-          throw new ParseException("bitfield source: bad string");
-        sources.Add(url);
-        continue;
-      }
+        if (!TryParseAtDecoratorInBody(bitfieldLine, out var meta, out var bare))
+          throw new ParseException($"bitfield: bad decorator: {bitfieldLine}");
+        if (bare != null)
+          throw new ParseException($"bitfield: bare @{bare} not allowed in block");
+        if (meta is ReBodyLine.SourceLine sl)
+        {
+          sources.Add(sl.Url);
+          continue;
+        }
 
-      if (fw.Equals("summary", StringComparison.OrdinalIgnoreCase))
-      {
-        var s = line.Substring(7).Trim();
-        var si = 0;
-        if (!StringLiterals.TryParse(s, ref si, out var sm))
-          throw new ParseException("bitfield summary: bad string");
-        summary = sm;
-        continue;
-      }
+        if (meta is ReBodyLine.SummaryLine sm)
+        {
+          summary = sm.Text;
+          continue;
+        }
 
-      if (fw.Equals("note", StringComparison.OrdinalIgnoreCase))
-      {
-        var rest = line.Substring(4).Trim();
-        var si = 0;
-        if (!StringLiterals.TryParse(rest, ref si, out var nt))
-          throw new ParseException("bitfield note: bad string");
-        note = nt;
-        continue;
+        if (meta is ReBodyLine.NoteEntityLine ne)
+        {
+          note = ne.Text;
+          continue;
+        }
+
+        throw new ParseException("bitfield: only @source, @summary, @note allowed in block");
       }
 
       var li = 0;
@@ -425,36 +536,32 @@ public static class ReDocumentParser
       if (string.IsNullOrWhiteSpace(line) || line.StartsWith("//", StringComparison.Ordinal))
         continue;
 
-      var fw = FirstWord(line);
-      if (fw.Equals("source", StringComparison.OrdinalIgnoreCase))
+      var enumLine = line.Trim();
+      if (enumLine.Length > 0 && enumLine[0] == '@')
       {
-        var r = line.AsSpan(6).Trim();
-        var si = 0;
-        var s = r.ToString();
-        if (!StringLiterals.TryParse(s, ref si, out var url))
-          throw new ParseException("enum source: bad string");
-        sources.Add(url);
-        continue;
-      }
+        if (!TryParseAtDecoratorInBody(enumLine, out var meta, out var bare))
+          throw new ParseException($"enum: bad decorator: {enumLine}");
+        if (bare != null)
+          throw new ParseException($"enum: bare @{bare} not allowed in block");
+        if (meta is ReBodyLine.SourceLine sl)
+        {
+          sources.Add(sl.Url);
+          continue;
+        }
 
-      if (fw.Equals("summary", StringComparison.OrdinalIgnoreCase))
-      {
-        var s = line.Substring(7).Trim();
-        var si = 0;
-        if (!StringLiterals.TryParse(s, ref si, out var sm))
-          throw new ParseException("enum summary: bad string");
-        summary = sm;
-        continue;
-      }
+        if (meta is ReBodyLine.SummaryLine sm)
+        {
+          summary = sm.Text;
+          continue;
+        }
 
-      if (fw.Equals("note", StringComparison.OrdinalIgnoreCase))
-      {
-        var rest = line.Substring(4).Trim();
-        var si = 0;
-        if (!StringLiterals.TryParse(rest, ref si, out var nt))
-          throw new ParseException("enum note: bad string");
-        note = nt;
-        continue;
+        if (meta is ReBodyLine.NoteEntityLine ne)
+        {
+          note = ne.Text;
+          continue;
+        }
+
+        throw new ParseException("enum: only @source, @summary, @note allowed in block");
       }
 
       var li = 0;
@@ -514,6 +621,22 @@ public static class ReDocumentParser
     return inner;
   }
 
+  /// <summary>Finds <c>//</c> starting a line comment; ignores <c>://</c> in URLs and <c>//</c> inside strings (caller trims outside strings).</summary>
+  private static int IndexOfDoubleSlashLineComment(string line)
+  {
+    for (var k = 0; k + 1 < line.Length; k++)
+    {
+      if (line[k] != '/' || line[k + 1] != '/')
+        continue;
+      if (k >= 1 && line[k - 1] == ':')
+        continue;
+      if (k == 0 || char.IsWhiteSpace(line[k - 1]))
+        return k;
+    }
+
+    return -1;
+  }
+
   /// <summary>Merges <c>"quoted"</c> field note with optional trailing <c>// slash</c> note.</summary>
   private static string? MergeFieldNotes(string? quotedNote, string? slashNote)
   {
@@ -526,11 +649,165 @@ public static class ReDocumentParser
     return $"{quotedNote} {slashNote}";
   }
 
+  private static bool TryPeekNextWorkLine(string body, int fromIndex, out string workLine, out int afterLine)
+  {
+    var i = fromIndex;
+    while (true)
+    {
+      StringLiterals.SkipNoise(body, ref i);
+      if (i >= body.Length)
+      {
+        workLine = "";
+        afterLine = i;
+        return false;
+      }
+
+      var lineBegin = i;
+      var lineEnd = i;
+      while (lineEnd < body.Length && body[lineEnd] != '\n' && body[lineEnd] != '\r')
+        lineEnd++;
+      var raw = body.Substring(lineBegin, lineEnd - lineBegin).Trim();
+      var ni = lineEnd;
+      if (ni < body.Length && body[ni] == '\r')
+        ni++;
+      if (ni < body.Length && body[ni] == '\n')
+        ni++;
+      afterLine = ni;
+      if (string.IsNullOrWhiteSpace(raw) || raw.StartsWith("//", StringComparison.Ordinal))
+      {
+        i = ni;
+        continue;
+      }
+
+      var cmt = IndexOfDoubleSlashLineComment(raw);
+      workLine = cmt >= 0 ? raw[..cmt].Trim() : raw;
+      return true;
+    }
+  }
+
+  private static bool NextLineLooksLikeNativeFunction(string body, int afterCurrentLine)
+  {
+    var pos = afterCurrentLine;
+    while (TryPeekNextWorkLine(body, pos, out var wl, out var nextPos))
+    {
+      var fw = FirstWord(wl);
+      if (fw.Equals("module", StringComparison.OrdinalIgnoreCase))
+      {
+        pos = nextPos;
+        continue;
+      }
+
+      return TryParseFunctionLine(wl, Array.Empty<string>(), null, out var fn) && fn != null;
+    }
+
+    return false;
+  }
+
+  /// <summary>Parses <c>@name</c> or <c>@name(...)</c> in type/module bodies (not leading prefix).</summary>
+  private static bool TryParseAtDecoratorInBody(
+    string workLine,
+    out ReBodyLine? meta,
+    out string? bareDecoratorName
+  )
+  {
+    meta = null;
+    bareDecoratorName = null;
+    if (string.IsNullOrWhiteSpace(workLine) || workLine[0] != '@')
+      return false;
+
+    if (DecoratorLineRegex.IsMatch(workLine))
+    {
+      bareDecoratorName = DecoratorLineRegex.Match(workLine).Groups[1].Value;
+      return true;
+    }
+
+    var w = workLine;
+    var j = 1;
+    if (j >= w.Length || !(char.IsLetter(w[j]) || w[j] == '_'))
+      return false;
+    var nameStart = j;
+    while (j < w.Length && (char.IsLetterOrDigit(w[j]) || w[j] == '_'))
+      j++;
+    var decName = w.Substring(nameStart, j - nameStart);
+    StringLiterals.SkipNoise(w, ref j);
+    if (j >= w.Length || w[j] != '(')
+      throw new ParseException($"@{decName}: expected '(' or bare @name");
+
+    j++;
+    StringLiterals.SkipNoise(w, ref j);
+
+    if (decName.Equals("source", StringComparison.OrdinalIgnoreCase))
+    {
+      if (!StringLiterals.TryParse(w, ref j, out var url))
+        throw new ParseException("@source: bad string");
+      StringLiterals.SkipNoise(w, ref j);
+      if (j >= w.Length || w[j] != ')')
+        throw new ParseException("@source: expected ')'");
+      j++;
+      StringLiterals.SkipNoise(w, ref j);
+      if (j < w.Length)
+        throw new ParseException("@source: trailing content");
+      meta = new ReBodyLine.SourceLine(url);
+      return true;
+    }
+
+    if (decName.Equals("summary", StringComparison.OrdinalIgnoreCase))
+    {
+      if (!StringLiterals.TryParse(w, ref j, out var sm))
+        throw new ParseException("@summary: bad string");
+      StringLiterals.SkipNoise(w, ref j);
+      if (j >= w.Length || w[j] != ')')
+        throw new ParseException("@summary: expected ')'");
+      j++;
+      StringLiterals.SkipNoise(w, ref j);
+      if (j < w.Length)
+        throw new ParseException("@summary: trailing content");
+      meta = new ReBodyLine.SummaryLine(sm);
+      return true;
+    }
+
+    if (decName.Equals("note", StringComparison.OrdinalIgnoreCase))
+    {
+      if (j < w.Length && w[j] == '"')
+      {
+        if (!StringLiterals.TryParse(w, ref j, out var nt))
+          throw new ParseException("@note: bad string");
+        StringLiterals.SkipNoise(w, ref j);
+        if (j >= w.Length || w[j] != ')')
+          throw new ParseException("@note: expected ')'");
+        j++;
+        StringLiterals.SkipNoise(w, ref j);
+        if (j < w.Length)
+          throw new ParseException("@note: trailing content");
+        meta = new ReBodyLine.NoteEntityLine(nt);
+        return true;
+      }
+
+      var fieldNm = ParseIdent(w, ref j);
+      StringLiterals.SkipNoise(w, ref j);
+      if (!StringLiterals.TryParse(w, ref j, out var fnt))
+        throw new ParseException("@note(field): bad string");
+      StringLiterals.SkipNoise(w, ref j);
+      if (j >= w.Length || w[j] != ')')
+        throw new ParseException("@note(field): expected ')'");
+      j++;
+      StringLiterals.SkipNoise(w, ref j);
+      if (j < w.Length)
+        throw new ParseException("@note(field): trailing content");
+      meta = new ReBodyLine.NoteFieldLine(fieldNm, fnt);
+      return true;
+    }
+
+    throw new ParseException($"Unknown decorator @{decName}(...)");
+  }
+
   private static List<ReBodyLine> ParseTypeBodyLines(string body)
   {
     var lines = new List<ReBodyLine>();
     var lineStart = 0;
     var pendingDecorators = new List<string>();
+    string? pendingFnNote = null;
+    var moduleLineJustEmitted = false;
     while (lineStart < body.Length)
     {
       StringLiterals.SkipNoise(body, ref lineStart);
@@ -557,7 +834,7 @@ public static class ReDocumentParser
       var workLine = line;
       string? inlineSlashNote = null;
       {
-        var cmt = workLine.IndexOf("//", StringComparison.Ordinal);
+        var cmt = IndexOfDoubleSlashLineComment(workLine);
         if (cmt >= 0)
         {
           inlineSlashNote = workLine[(cmt + 2)..].Trim();
@@ -565,12 +842,62 @@ public static class ReDocumentParser
         }
       }
 
-      if (DecoratorLineRegex.IsMatch(workLine))
+      if (workLine.Length > 0 && workLine[0] == '@')
       {
-        var m = DecoratorLineRegex.Match(workLine);
-        pendingDecorators.Add(m.Groups[1].Value);
-        lineStart = ni;
-        continue;
+        if (TryParseAtDecoratorInBody(workLine, out var meta, out var bareName))
+        {
+          if (bareName != null)
+          {
+            pendingDecorators.Add(bareName);
+            moduleLineJustEmitted = false;
+            lineStart = ni;
+            continue;
+          }
+
+          if (meta is ReBodyLine.SourceLine sl)
+          {
+            if (!moduleLineJustEmitted && NextLineLooksLikeNativeFunction(body, ni))
+              pendingDecorators.Add($"source({ReQuotedString.DoubleQuote(sl.Url)})");
+            else
+              lines.Add(sl);
+            moduleLineJustEmitted = false;
+            lineStart = ni;
+            continue;
+          }
+
+          if (meta is ReBodyLine.SummaryLine sum)
+          {
+            if (!moduleLineJustEmitted && NextLineLooksLikeNativeFunction(body, ni))
+              pendingDecorators.Add($"summary({ReQuotedString.DoubleQuote(sum.Text)})");
+            else
+              lines.Add(sum);
+            moduleLineJustEmitted = false;
+            lineStart = ni;
+            continue;
+          }
+
+          if (meta is ReBodyLine.NoteEntityLine ne)
+          {
+            if (NextLineLooksLikeNativeFunction(body, ni))
+              pendingFnNote = ne.Text;
+            else
+              lines.Add(ne);
+            moduleLineJustEmitted = false;
+            lineStart = ni;
+            continue;
+          }
+
+          if (meta is ReBodyLine.NoteFieldLine nf)
+          {
+            lines.Add(nf);
+            lineStart = ni;
+            pendingDecorators.Clear();
+            moduleLineJustEmitted = false;
+            continue;
+          }
+        }
+
+        throw new ParseException($"Unrecognized decorator: {workLine}");
       }
 
       if (
@@ -589,6 +916,8 @@ public static class ReDocumentParser
         lines.Add(inl!);
         lineStart = inlineEnd;
         pendingDecorators.Clear();
+        pendingFnNote = null;
+        moduleLineJustEmitted = false;
         continue;
       }
 
@@ -606,6 +935,8 @@ public static class ReDocumentParser
           )
         );
         pendingDecorators.Clear();
+        pendingFnNote = null;
+        moduleLineJustEmitted = false;
         continue;
       }
       catch (Exception)
@@ -632,14 +963,21 @@ public static class ReDocumentParser
           )
         );
         pendingDecorators.Clear();
+        pendingFnNote = null;
+        moduleLineJustEmitted = false;
         continue;
       }
 
       // Address + name + '(' immediately after the name => native function (optional "fn"; "static" + addr).
-      if (TryParseFunctionLine(line, pendingDecorators, out var fnLineEarly) && fnLineEarly != null)
+      if (
+        TryParseFunctionLine(line, pendingDecorators, pendingFnNote, out var fnLineEarly)
+        && fnLineEarly != null
+      )
       {
         lines.Add(fnLineEarly);
         pendingDecorators.Clear();
+        pendingFnNote = null;
+        moduleLineJustEmitted = false;
         continue;
       }
 
@@ -655,6 +993,8 @@ public static class ReDocumentParser
           )
         );
         pendingDecorators.Clear();
+        pendingFnNote = null;
+        moduleLineJustEmitted = false;
         continue;
       }
       catch (Exception)
@@ -671,6 +1011,8 @@ public static class ReDocumentParser
             )
           );
           pendingDecorators.Clear();
+          pendingFnNote = null;
+          moduleLineJustEmitted = false;
           continue;
         }
       }
@@ -681,81 +1023,8 @@ public static class ReDocumentParser
         var rest = line.Substring(6).Trim();
         lines.Add(new ReBodyLine.ModuleLine(rest));
         pendingDecorators.Clear();
-        continue;
-      }
-
-      if (fw.Equals("source", StringComparison.OrdinalIgnoreCase))
-      {
-        var r = line.AsSpan(6).Trim();
-        var si = 0;
-        var s = r.ToString();
-        if (!StringLiterals.TryParse(s, ref si, out var url))
-          throw new ParseException("source: bad string");
-        lines.Add(new ReBodyLine.SourceLine(url));
-        pendingDecorators.Clear();
-        continue;
-      }
-
-      if (fw.Equals("summary", StringComparison.OrdinalIgnoreCase))
-      {
-        var s = line.Substring(7).Trim();
-        var si = 0;
-        if (!StringLiterals.TryParse(s, ref si, out var sm))
-          throw new ParseException("summary: bad string");
-        lines.Add(new ReBodyLine.SummaryLine(sm));
-        pendingDecorators.Clear();
-        continue;
-      }
-
-      if (fw.Equals("note", StringComparison.OrdinalIgnoreCase))
-      {
-        var rest = line.Substring(4).Trim();
-        if (
-          rest.Length >= 2
-          && rest.StartsWith("fn", StringComparison.OrdinalIgnoreCase)
-          && (rest.Length == 2 || char.IsWhiteSpace(rest[2]))
-        )
-        {
-          var afterFnKw = rest.Substring(2).TrimStart();
-          var qPos = afterFnKw.IndexOf('"');
-          if (qPos < 0)
-            throw new ParseException("note fn: expected string literal");
-          var fnName = afterFnKw[..qPos].TrimEnd();
-          if (fnName.Length == 0)
-            throw new ParseException("note fn: missing function name");
-          var litPart = afterFnKw[qPos..];
-          var li = 0;
-          if (!StringLiterals.TryParse(litPart, ref li, out var fnNoteText))
-            throw new ParseException("note fn: bad string");
-          lines.Add(new ReBodyLine.NoteFunctionLine(fnName, fnNoteText));
-          pendingDecorators.Clear();
-          continue;
-        }
-
-        var si = 0;
-        if (rest.Length > 0 && (char.IsLetter(rest[0]) || rest[0] == '_'))
-        {
-          var w = FirstWord(rest);
-          var after = rest.Substring(w.Length).Trim();
-          if (
-            after.Length > 0
-            && (after[0] == '"' || after.StartsWith("\"\"\"", StringComparison.Ordinal))
-          )
-          {
-            var ai = 0;
-            if (!StringLiterals.TryParse(after, ref ai, out var nt))
-              throw new ParseException("note field: bad string");
-            lines.Add(new ReBodyLine.NoteFieldLine(w, nt));
-            pendingDecorators.Clear();
-            continue;
-          }
-        }
-
-        si = 0;
-        if (!StringLiterals.TryParse(rest, ref si, out var nte))
-          throw new ParseException("note: bad string");
-        lines.Add(new ReBodyLine.NoteEntityLine(nte));
-        pendingDecorators.Clear();
+        pendingFnNote = null;
+        moduleLineJustEmitted = true;
         continue;
       }
 
@@ -814,6 +1083,7 @@ public static class ReDocumentParser
   private static bool TryParseFunctionLine(
     string line,
     IReadOnlyList<string> decorators,
+    string? pendingDecoratorNote,
     out ReBodyLine.FunctionLine? fl
   )
   {
@@ -930,12 +1200,13 @@ public static class ReDocumentParser
         retType = null;
     }
 
+    var mergedNote = pendingDecoratorNote ?? inlineNote;
     fl = new ReBodyLine.FunctionLine(
       address,
       name,
       parameters,
       retType,
-      inlineNote,
+      mergedNote,
       decorators.Count == 0 ? Array.Empty<string>() : new List<string>(decorators)
     );
     return true;

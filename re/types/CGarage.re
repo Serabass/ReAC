@@ -1,6 +1,6 @@
+@source("https://gtamods.com/wiki/Memory_Addresses_(VC)#Garages")
 class CGarage {
   module Core.Main
-  source "https://gtamods.com/wiki/Memory_Addresses_(VC)#Garages"
   static 0x007D74B8 elSwankoCasa : CGarage* "El Swanko Casa; 1 car garage."
   static 0x007D74E0 elSwankoCasa2 : CGarage*
   static 0x007D7508 elSwankoCasa3 : CGarage*
@@ -60,8 +60,8 @@ class CGarage {
 }
 
 enum eBombType : byte {
-  source "https://gtamods.com/wiki/Memory_Addresses_(VC)#Garages"
-  summary "Bomb Type"
+  @source("https://gtamods.com/wiki/Memory_Addresses_(VC)#Garages")
+  @summary("Bomb Type")
   0x000 none
   0x001 timed
   0x002 engineIgnition

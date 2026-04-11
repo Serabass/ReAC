@@ -1,6 +1,6 @@
+@source("https://gtamods.com/wiki/Memory_Addresses_(VC)#CPed")
 class CPolice {
   module Core.Main
-  source "https://gtamods.com/wiki/Memory_Addresses_(VC)#CPed"
   static 0x00A10ADB heliState : bool
   static 0x00426A21 firstCar : byte
   static 0x00426987 secondCar : byte

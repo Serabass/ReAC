@@ -1,6 +1,6 @@
+@source("https://gtamods.com/wiki/Memory_Addresses_(VC)")
 class CGame {
   module Core.Main
-  source "https://gtamods.com/wiki/Memory_Addresses_(VC)"
   0x00441F70 DeactivateSlowMotion() : void
   static 0x00A10B98 slowMotion : bool
   static 0x0068F5F0 gravity : float

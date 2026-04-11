@@ -1,9 +1,9 @@
+@source("https://gtamods.com/wiki/Memory_Addresses_(VC)#CPed")
 class CPed : CPhysical {
   module Core.Main
-  source "https://gtamods.com/wiki/Memory_Addresses_(VC)#CPed"
+  @note("Sets ammo for a weapon slot (sample).")
   0x004FF780 SetAmmo(eWeaponType, uint) : void
   0x004FF840 GrantAmmo(eWeaponType, uint) : void
-  note fn SetAmmo "Sets ammo for a weapon slot (sample)."
   static 0x0094AD28 Player : CPed* "Singleton / global; points to the active player (instance of CPed)."
   0x141 fastShoot            : bool
   0x14C shootingAnim         : byte
@@ -21,8 +21,8 @@ class CPed : CPhysical {
 }
 
 enum ePedType : byte {
-  source "https://gtamods.com/wiki/Memory_Addresses_(VC)#CPed"
-  summary "Ped type enum"
+  @source("https://gtamods.com/wiki/Memory_Addresses_(VC)#CPed")
+  @summary("Ped type enum")
   0x000 PLAYER1 "Primary player definition"
   0x001 PLAYER2 "Secondary player definition"
   0x006 COP "Cop"
