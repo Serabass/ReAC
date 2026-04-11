@@ -18,13 +18,21 @@ public static class ProjectLoader
     var typesDir = Path.Combine(projectRoot, cfg.TypesDir);
     var docsDir = Path.Combine(projectRoot, cfg.DocsDir);
 
+    var rawReFiles = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+    foreach (var f in EnumerateReFilesSorted(targetsDir))
+      rawReFiles[f] = File.ReadAllText(f);
+    foreach (var f in EnumerateReFilesSorted(modulesDir))
+      rawReFiles[f] = File.ReadAllText(f);
+    foreach (var f in EnumerateReFilesSorted(typesDir))
+      rawReFiles[f] = File.ReadAllText(f);
+    var processedRe = RePreprocessor.ProcessAllFiles(rawReFiles, cfg.PredefinedMacros);
     var parsedFiles = new List<(string Path, IReadOnlyList<ReTopLevel> Tops)>();
     foreach (var f in EnumerateReFilesSorted(targetsDir))
-      parsedFiles.Add((f, ReDocumentParser.ParseDocument(File.ReadAllText(f))));
+      parsedFiles.Add((f, ReDocumentParser.ParseDocument(processedRe[f])));
     foreach (var f in EnumerateReFilesSorted(modulesDir))
-      parsedFiles.Add((f, ReDocumentParser.ParseDocument(File.ReadAllText(f))));
+      parsedFiles.Add((f, ReDocumentParser.ParseDocument(processedRe[f])));
     foreach (var f in EnumerateReFilesSorted(typesDir))
-      parsedFiles.Add((f, ReDocumentParser.ParseDocument(File.ReadAllText(f))));
+      parsedFiles.Add((f, ReDocumentParser.ParseDocument(processedRe[f])));
 
     var targets = new List<TargetDecl>();
     foreach (var (path, tops) in parsedFiles)
@@ -77,6 +85,13 @@ public static class ProjectLoader
           );
       }
     }
+
+    RegisterSyntheticInlineBitfields(
+      parsedFiles,
+      bitfieldMap,
+      enumMap,
+      pointerSizeForBitfields
+    );
 
     var modules = new List<ModuleDecl>();
     var types = new List<TypeDecl>();
@@ -150,6 +165,46 @@ public static class ProjectLoader
       yield return f;
   }
 
+  private static void RegisterSyntheticInlineBitfields(
+    IReadOnlyList<(string Path, IReadOnlyList<ReTopLevel> Tops)> parsedFiles,
+    Dictionary<string, BitfieldTypeDecl> bitfieldMap,
+    IReadOnlyDictionary<string, EnumTypeDecl> enumMap,
+    int pointerSizeBytes
+  )
+  {
+    foreach (var (path, tops) in parsedFiles)
+    {
+      foreach (var t in tops)
+      {
+        if (t is not ReTopLevel.TypeDef td)
+          continue;
+        foreach (var line in td.Body)
+        {
+          if (line is not ReBodyLine.InlineBitfieldFieldLine ib)
+            continue;
+          var synth = $"{td.Name}_{ib.FieldName}";
+          if (enumMap.ContainsKey(synth))
+            throw new InvalidOperationException(
+              $"Inline bitfield '{synth}' conflicts with an enum name (see {path})"
+            );
+          if (bitfieldMap.ContainsKey(synth))
+            throw new InvalidOperationException(
+              $"Inline bitfield '{synth}' conflicts with an existing bitfield type (see {path})"
+            );
+          var pseudo = new ReTopLevel.BitfieldDef(
+            synth,
+            ib.StorageName,
+            ib.Bits,
+            ib.SourceUrls,
+            ib.Summary,
+            ib.BlockNote
+          );
+          bitfieldMap[synth] = ToBitfieldDecl(pseudo, path, pointerSizeBytes);
+        }
+      }
+    }
+  }
+
   private static BitfieldTypeDecl ToBitfieldDecl(
     ReTopLevel.BitfieldDef d,
     string file,
@@ -163,7 +218,7 @@ public static class ProjectLoader
       );
 
     var seenBits = new HashSet<int>();
-    foreach (var (bit, _) in d.Bits)
+    foreach (var (bit, _, _) in d.Bits)
     {
       if (bit < 0 || bit > maxBit.Value)
         throw new InvalidOperationException(
@@ -177,7 +232,14 @@ public static class ProjectLoader
     {
       Name = d.Name,
       StorageName = d.StorageName,
-      Bits = d.Bits.Select(b => new FlagBitDecl { Bit = b.Bit, Name = b.Name }).ToList(),
+      Bits = d
+        .Bits.Select(b => new FlagBitDecl
+        {
+          Bit = b.Bit,
+          Name = b.Name,
+          Description = b.Description,
+        })
+        .ToList(),
       SourceUrls = d.SourceUrls.ToList(),
       Summary = d.Summary,
       Note = d.Note,
@@ -274,6 +336,32 @@ public static class ProjectLoader
     var fields = new List<FieldDecl>();
     foreach (var line in td.Body)
     {
+      if (line is ReBodyLine.InlineBitfieldFieldLine ibf)
+      {
+        var synth = $"{td.Name}_{ibf.FieldName}";
+        if (!bitfieldMap.TryGetValue(synth, out var bfInline))
+          throw new InvalidOperationException($"Internal: missing synthetic bitfield '{synth}'");
+        var mergedInline =
+          (fieldNotes.TryGetValue(ibf.FieldName, out var nti) ? nti : null) ?? ibf.Note;
+        fields.Add(
+          new FieldDecl
+          {
+            IsStatic = false,
+            StaticAddress = null,
+            Offset = ibf.Offset,
+            Name = ibf.FieldName,
+            Type = new TypeExpr.Scalar(CanonicalScalarForBitfieldStorage(bfInline.StorageName)),
+            Note = mergedInline,
+            Provenance = null,
+            FlagBits = bfInline.Bits,
+            BitfieldTypeName = synth,
+            EnumTypeName = null,
+            EnumValues = null,
+          }
+        );
+        continue;
+      }
+
       if (line is not ReBodyLine.FieldLine && line is not ReBodyLine.StaticFieldLine)
         continue;
 
@@ -339,6 +427,7 @@ public static class ProjectLoader
             ReturnType = fn.ReturnType,
             Note = mergedFnNote,
             Provenance = null,
+            Decorators = fn.Decorators,
           }
         );
       }

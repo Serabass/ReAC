@@ -44,10 +44,10 @@ public class HtmlExportSmokeTests
       var cobj = Path.Combine(outDir, "type", "CObject.html");
       Assert.True(File.Exists(cobj));
       var cobjHtml = File.ReadAllText(cobj);
-      Assert.Contains("CObjectObjectFlags1", cobjHtml, StringComparison.Ordinal);
-      Assert.Contains("../bitfield/CObjectObjectFlags1.html", cobjHtml, StringComparison.Ordinal);
+      Assert.Contains("CObjectFlags1", cobjHtml, StringComparison.Ordinal);
+      Assert.Contains("../bitfield/CObjectFlags1.html", cobjHtml, StringComparison.Ordinal);
 
-      var bf1 = Path.Combine(outDir, "bitfield", "CObjectObjectFlags1.html");
+      var bf1 = Path.Combine(outDir, "bitfield", "CObjectFlags1.html");
       Assert.True(File.Exists(bf1));
       Assert.Contains("bIsPickupObject", File.ReadAllText(bf1), StringComparison.Ordinal);
 

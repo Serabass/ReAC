@@ -294,6 +294,10 @@ public static class HtmlExporter
       case TypeExpr.Array a:
         CollectUnresolvedNames(a.Element, map, list);
         break;
+      case TypeExpr.Generic g:
+        foreach (var a in g.TypeArguments)
+          CollectUnresolvedNames(a, map, list);
+        break;
     }
   }
 
@@ -423,12 +427,16 @@ public static class HtmlExporter
         {
           var retPlain = string.IsNullOrEmpty(fn.ReturnType) ? "" : fn.ReturnType;
           var notePlain = string.IsNullOrEmpty(fn.Note) ? "" : fn.Note;
+          var decPlain = fn.Decorators.Count == 0
+            ? ""
+            : string.Join(" ", fn.Decorators.Select(d => "@" + d));
           return new NativeFnRowVm(
             $"0x{fn.Address:X}",
             fn.Name,
             fn.Parameters,
             retPlain,
-            notePlain
+            notePlain,
+            decPlain
           );
         })
         .ToList();
@@ -544,7 +552,10 @@ public static class HtmlExporter
   {
     var hasNote = !string.IsNullOrEmpty(note);
     var fb = bits is { Count: > 0 }
-      ? bits.OrderBy(x => x.Bit).Select(x => new FlagBitVm(x.Bit, x.Name)).ToList()
+      ? bits
+        .OrderBy(x => x.Bit)
+        .Select(x => new FlagBitVm(x.Bit, x.Name, x.Description))
+        .ToList()
       : (IReadOnlyList<FlagBitVm>)Array.Empty<FlagBitVm>();
     var ev = enumVals is { Count: > 0 }
       ? enumVals
@@ -562,6 +573,8 @@ public static class HtmlExporter
       TypeExpr.Named n => n.Name,
       TypeExpr.Pointer p => TypeString(p.Inner) + "*",
       TypeExpr.Array a => $"{TypeString(a.Element)}[{a.Length}]",
+      TypeExpr.Generic g =>
+        $"{g.Name}<{string.Join(", ", g.TypeArguments.Select(TypeString))}>",
       _ => "?",
     };
 

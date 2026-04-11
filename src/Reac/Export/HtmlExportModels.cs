@@ -33,7 +33,7 @@ internal sealed record FieldNoteVm(
   IReadOnlyList<EnumValVm> EnumValues
 );
 
-internal sealed record FlagBitVm(int Bit, string Name);
+internal sealed record FlagBitVm(int Bit, string Name, string? Description);
 
 internal sealed record EnumValVm(ulong Value, string Name, string? Description);
 
@@ -60,7 +60,8 @@ internal sealed record NativeFnRowVm(
   string NamePlain,
   string ParamsPlain,
   string ReturnPlain,
-  string NotePlain
+  string NotePlain,
+  string DecoratorsPlain
 );
 
 internal sealed record NativeFnSectionVm(string TypeName, IReadOnlyList<NativeFnRowVm> Rows);

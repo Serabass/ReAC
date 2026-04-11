@@ -8,3 +8,7 @@ modules_dir   = "re/modules"
 types_dir     = "re/types"
 docs_dir      = "re/docs"
 generated_dir = "re/generated"
+
+# Symbols visible to the .re preprocessor (#ifdef / expansion). See re/types/ReacSyntaxExamples.re
+[preprocessor.defines]
+REAC_SYNTAX_EXAMPLES = "1"

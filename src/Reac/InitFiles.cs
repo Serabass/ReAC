@@ -159,7 +159,7 @@ class CPhysical : CEntity size 0x120 {
 """;
 
   private const string CObjectFlags = """
-bitfield CObjectObjectFlags1 : byte {
+bitfield CObjectFlags1 : byte {
   source "https://gtamods.com/wiki/Memory_Addresses_(VC)#CObject"
   summary "First object flags byte (VC); names from GTAMods wiki."
   0 bIsPickupObject
@@ -172,7 +172,7 @@ bitfield CObjectObjectFlags1 : byte {
   7 bIsVehicleComponent
 }
 
-bitfield CObjectObjectFlags2 : byte {
+bitfield CObjectFlags2 : byte {
   source "https://gtamods.com/wiki/Memory_Addresses_(VC)#CObject"
   summary "Second object flags byte (VC); names from GTAMods wiki."
   0 bSpecialLighting
@@ -201,8 +201,8 @@ class CObject : CPhysical size 0x1A0 {
   0x120 matDummyInitial : byte[72]
   0x168 fAttachForce : float
   0x16C byteObjectType : byte
-  0x16D objectFlags1 : CObjectObjectFlags1
-  0x16E objectFlags2 : CObjectObjectFlags2
+  0x16D objectFlags1 : CObjectFlags1
+  0x16E objectFlags2 : CObjectFlags2
   0x16F bytePickupObjectBonusType : byte
   0x170 wPickupObjectQuantity : uint16
   0x172 _padding172 : byte[2]
@@ -269,8 +269,8 @@ document Sample_Memory_Model {
     ref CVector
     ref CMatrix
     ref CObject
-    ref CObjectObjectFlags1
-    ref CObjectObjectFlags2
+    ref CObjectFlags1
+    ref CObjectFlags2
     ref eWeaponType
   }
   summary "Example .re types showing inheritance, field offsets, optional native function entry points, and bitfield annotations. Replace sources and names with your binary's provenance."
@@ -281,7 +281,7 @@ document Sample_Memory_Model {
     text "Struct fields use hex offsets; native calls are documented separately with fn lines (addresses and signatures are opaque text for your target ABI)."
   }
   section Bitfields {
-    text "Define named flag layouts as top-level bitfield Name : StorageScalar { N bitName; ... } where StorageScalar is any fixed-size scalar (byte, uint16, uint32, uint64, float, double, pointer, …). Bit indices are 0 .. 8*size-1. Optionally use a separate .re file; then use that name as the field type. Examples: CObjectObjectFlags1, CObjectObjectFlags2."
+    text "Define named flag layouts as top-level bitfield Name : StorageScalar { N bitName; ... } where StorageScalar is any fixed-size scalar (byte, uint16, uint32, uint64, float, double, pointer, …). Bit indices are 0 .. 8*size-1. Optionally use a separate .re file; then use that name as the field type. Examples: CObjectFlags1, CObjectFlags2."
   }
   section Enums {
     text "Top-level enum Name : StorageScalar { N EnumeratorName optional-quoted-description; ... }. Values are unsigned and must fit the storage width. Use the enum name as a field type (layout uses the underlying scalar). Example: eWeaponType on CWeapon.weaponType."

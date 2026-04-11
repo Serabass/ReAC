@@ -5,9 +5,9 @@
 {{ if summary }}<p class="prov">{{ summary | html.escape }}</p>{{ end }}
 {{ if note }}<p class="prov">{{ note | html.escape }}</p>{{ end }}
 <h2>Bits</h2>
-<table><thead><tr><th>Bit</th><th>Name</th></tr></thead><tbody>
+<table><thead><tr><th>Bit</th><th>Name</th><th>Description</th></tr></thead><tbody>
 {{ for x in bits }}
-<tr><td>{{ x.bit }}</td><td>{{ x.name | html.escape }}</td></tr>
+<tr><td>{{ x.bit }}</td><td>{{ x.name | html.escape }}</td><td class="prov">{{ x.description | html.escape }}</td></tr>
 {{ end }}
 </tbody></table>
 {{ provenance }}

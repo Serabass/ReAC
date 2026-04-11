@@ -36,6 +36,21 @@ public static class ProjectMeta
         generatedDir = gd?.ToString() ?? generatedDir;
     }
 
+    var predefined = new Dictionary<string, string>(StringComparer.Ordinal);
+    if (root.TryGetValue("preprocessor", out var preObj) && preObj is TomlTable pre)
+    {
+      if (pre.TryGetValue("defines", out var defObj) && defObj is TomlTable defTable)
+      {
+        foreach (var kv in defTable)
+        {
+          var key = kv.Key ?? "";
+          if (key.Length == 0)
+            continue;
+          predefined[key] = kv.Value?.ToString() ?? "";
+        }
+      }
+    }
+
     return new ProjectConfig
     {
       Name = name,
@@ -46,6 +61,7 @@ public static class ProjectMeta
       TypesDir = typesDir,
       DocsDir = docsDir,
       GeneratedDir = generatedDir,
+      PredefinedMacros = predefined,
     };
   }
 }

@@ -190,7 +190,7 @@ internal static class HtmlTemplates
     var ctx = new TemplateContext();
     var bits = b
       .Bits.OrderBy(x => x.Bit)
-      .Select(x => new BitRow(x.Bit, x.Name))
+      .Select(x => new BitRow(x.Bit, x.Name, x.Description ?? ""))
       .ToList();
     PushModelGlobalsDeep(
       ctx,
@@ -251,7 +251,7 @@ internal static class HtmlTemplates
     return t.Render(ctx);
   }
 
-  private sealed record BitRow(int bit, string name);
+  private sealed record BitRow(int bit, string name, string description);
 
   private sealed record EnumRow(ulong value, string name, string description);
 }

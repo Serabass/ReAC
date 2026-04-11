@@ -2,6 +2,7 @@ class CRunningScript {
   module Core.Main
   source "https://gtamods.com/wiki/Function_Memory_Addresses_(VC)#CRunningScript"
 
+  static 0x0044FD70 Process()                       : uint8
   static 0x0044B400 ProcessCommands0To99(int)       : uint8 "0000 -> 0063"
   static 0x00446390 ProcessCommands100To199(int)    : uint8 "0064 -> 00C4"
   static 0x00444BE0 ProcessCommands200To299(int)    : uint8 "00D6 -> 012A"

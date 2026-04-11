@@ -2,7 +2,7 @@
 {{ if HasBits }}
 <ul class="prov">
 {{ for b in FlagBits }}
-<li>bit {{ b.Bit }}: {{ b.Name | html.escape }}</li>
+<li>bit {{ b.Bit }}: {{ b.Name | html.escape }}{{ if b.Description }} — {{ b.Description | html.escape }}{{ end }}</li>
 {{ end }}
 </ul>
 {{ end }}

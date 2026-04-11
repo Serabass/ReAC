@@ -37,6 +37,8 @@ public static class FieldSizer
           return (true, null);
         return (false, innerS * ar.Length);
       }
+      case TypeExpr.Generic:
+        return (true, null);
       default:
         return (true, null);
     }
@@ -65,6 +67,8 @@ public static class FieldSizer
           return (true, null);
         return (false, innerS * ar.Length);
       }
+      case TypeExpr.Generic:
+        return (true, null);
       default:
         return (true, null);
     }
@@ -78,7 +82,7 @@ public static class FieldSizer
       "pointer" => pointerSize,
       "byte" or "uint8" or "char" or "bool" => 1,
       "uint16" or "word" => 2,
-      "uint32" or "dword" or "int32" => 4,
+      "uint32" or "dword" or "int32" or "int" => 4,
       "uint64" or "int64" => 8,
       "float" => 4,
       "double" => 8,

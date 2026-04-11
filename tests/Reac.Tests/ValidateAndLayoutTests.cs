@@ -30,7 +30,7 @@ public class ValidateAndLayoutTests
     Assert.NotNull(f1.FlagBits);
     Assert.Equal(8, f1.FlagBits!.Count);
     Assert.Contains(f1.FlagBits, b => b.Bit == 0 && b.Name == "bIsPickupObject");
-    Assert.Equal("CObjectObjectFlags1", f1.BitfieldTypeName);
+    Assert.Equal("CObjectFlags1", f1.BitfieldTypeName);
     var layout = LayoutEngine.BuildLayouts(ir, 4)["CObject"];
     var flat = layout.Flattened.First(x =>
       x.Name == "objectFlags1" && x.DeclaringTypeName == "CObject"

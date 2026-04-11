@@ -19,6 +19,16 @@ public static class ReDocumentParser
     RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.IgnoreCase
   );
 
+  private static readonly Regex DecoratorLineRegex = new(
+    @"^\s*@([A-Za-z_][A-Za-z0-9_]*)\s*$",
+    RegexOptions.Compiled | RegexOptions.CultureInvariant
+  );
+
+  private static readonly Regex InlineBitfieldHeadRegex = new(
+    @"^0x([0-9a-fA-F]+)\s+([A-Za-z_][A-Za-z0-9_]*)\s*:\s*bitfield\s*:\s*([A-Za-z_][A-Za-z0-9_]*)\s*\{\s*$",
+    RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.IgnoreCase
+  );
+
   public static IReadOnlyList<ReTopLevel> ParseDocument(string text)
   {
     var i = 0;
@@ -270,13 +280,13 @@ public static class ReDocumentParser
   }
 
   private static (
-    IReadOnlyList<(int Bit, string Name)> Bits,
+    IReadOnlyList<(int Bit, string Name, string? Description)> Bits,
     IReadOnlyList<string> SourceUrls,
     string? Summary,
     string? Note
   ) ParseBitfieldInnerLines(string body)
   {
-    var bits = new List<(int Bit, string Name)>();
+    var bits = new List<(int Bit, string Name, string?)>();
     var sources = new List<string>();
     string? summary = null,
       note = null;
@@ -335,16 +345,29 @@ public static class ReDocumentParser
         continue;
       }
 
-      var m = Regex.Match(line, @"^(\d+)\s+([A-Za-z_][A-Za-z0-9_]*)$");
-      if (!m.Success)
-        throw new ParseException(
-          $"bitfield: expected source/summary/note or 'N name', got: {line}"
-        );
-      var bit = int.Parse(m.Groups[1].Value, CultureInfo.InvariantCulture);
-      var bitName = m.Groups[2].Value;
+      var li = 0;
+      var bitNum = ParseULong(line, ref li);
+      if (bitNum > int.MaxValue)
+        throw new ParseException($"bitfield: bit index too large: {line}");
+      var bit = (int)bitNum;
+      StringLiterals.SkipNoise(line, ref li);
+      var bitName = ParseIdent(line, ref li);
+      StringLiterals.SkipNoise(line, ref li);
+      string? bitDesc = null;
+      if (li < line.Length)
+      {
+        if (!StringLiterals.TryParse(line, ref li, out bitDesc))
+          throw new ParseException(
+            $"bitfield: expected optional quoted description after '{bitName}', got: {line}"
+          );
+        StringLiterals.SkipNoise(line, ref li);
+        if (li < line.Length)
+          throw new ParseException($"bitfield: trailing content after bit line: {line}");
+      }
+
       if (!seen.Add(bit))
         throw new ParseException($"bitfield: duplicate bit index {bit}");
-      bits.Add((bit, bitName));
+      bits.Add((bit, bitName, bitDesc));
     }
 
     if (bits.Count == 0)
@@ -507,6 +530,7 @@ public static class ReDocumentParser
   {
     var lines = new List<ReBodyLine>();
     var lineStart = 0;
+    var pendingDecorators = new List<string>();
     while (lineStart < body.Length)
     {
       StringLiterals.SkipNoise(body, ref lineStart);
@@ -530,8 +554,6 @@ public static class ReDocumentParser
         continue;
       }
 
-      lineStart = ni;
-
       var workLine = line;
       string? inlineSlashNote = null;
       {
@@ -542,6 +564,35 @@ public static class ReDocumentParser
           workLine = workLine[..cmt].Trim();
         }
       }
+
+      if (DecoratorLineRegex.IsMatch(workLine))
+      {
+        var m = DecoratorLineRegex.Match(workLine);
+        pendingDecorators.Add(m.Groups[1].Value);
+        lineStart = ni;
+        continue;
+      }
+
+      if (
+        InlineBitfieldHeadRegex.IsMatch(workLine)
+        && TryParseInlineBitfieldField(
+          body,
+          lineBegin,
+          ni,
+          workLine,
+          inlineSlashNote,
+          out var inl,
+          out var inlineEnd
+        )
+      )
+      {
+        lines.Add(inl!);
+        lineStart = inlineEnd;
+        pendingDecorators.Clear();
+        continue;
+      }
+
+      lineStart = ni;
 
       try
       {
@@ -554,6 +605,7 @@ public static class ReDocumentParser
             MergeFieldNotes(sp.QuotedNote, inlineSlashNote)
           )
         );
+        pendingDecorators.Clear();
         continue;
       }
       catch (Exception)
@@ -579,6 +631,15 @@ public static class ReDocumentParser
             MergeFieldNotes(stSplit.QuotedNote, inlineSlashNote)
           )
         );
+        pendingDecorators.Clear();
+        continue;
+      }
+
+      // Address + name + '(' immediately after the name => native function (optional "fn"; "static" + addr).
+      if (TryParseFunctionLine(line, pendingDecorators, out var fnLineEarly) && fnLineEarly != null)
+      {
+        lines.Add(fnLineEarly);
+        pendingDecorators.Clear();
         continue;
       }
 
@@ -593,6 +654,7 @@ public static class ReDocumentParser
             MergeFieldNotes(parsed.QuotedNote, inlineSlashNote)
           )
         );
+        pendingDecorators.Clear();
         continue;
       }
       catch (Exception)
@@ -608,14 +670,9 @@ public static class ReDocumentParser
               MergeFieldNotes(fldSplit.QuotedNote, inlineSlashNote)
             )
           );
+          pendingDecorators.Clear();
           continue;
         }
-      }
-
-      if (TryParseFunctionLine(line, out var fnLine) && fnLine != null)
-      {
-        lines.Add(fnLine);
-        continue;
       }
 
       var fw = FirstWord(line);
@@ -623,6 +680,7 @@ public static class ReDocumentParser
       {
         var rest = line.Substring(6).Trim();
         lines.Add(new ReBodyLine.ModuleLine(rest));
+        pendingDecorators.Clear();
         continue;
       }
 
@@ -634,6 +692,7 @@ public static class ReDocumentParser
         if (!StringLiterals.TryParse(s, ref si, out var url))
           throw new ParseException("source: bad string");
         lines.Add(new ReBodyLine.SourceLine(url));
+        pendingDecorators.Clear();
         continue;
       }
 
@@ -644,6 +703,7 @@ public static class ReDocumentParser
         if (!StringLiterals.TryParse(s, ref si, out var sm))
           throw new ParseException("summary: bad string");
         lines.Add(new ReBodyLine.SummaryLine(sm));
+        pendingDecorators.Clear();
         continue;
       }
 
@@ -668,6 +728,7 @@ public static class ReDocumentParser
           if (!StringLiterals.TryParse(litPart, ref li, out var fnNoteText))
             throw new ParseException("note fn: bad string");
           lines.Add(new ReBodyLine.NoteFunctionLine(fnName, fnNoteText));
+          pendingDecorators.Clear();
           continue;
         }
 
@@ -685,6 +746,7 @@ public static class ReDocumentParser
             if (!StringLiterals.TryParse(after, ref ai, out var nt))
               throw new ParseException("note field: bad string");
             lines.Add(new ReBodyLine.NoteFieldLine(w, nt));
+            pendingDecorators.Clear();
             continue;
           }
         }
@@ -693,6 +755,7 @@ public static class ReDocumentParser
         if (!StringLiterals.TryParse(rest, ref si, out var nte))
           throw new ParseException("note: bad string");
         lines.Add(new ReBodyLine.NoteEntityLine(nte));
+        pendingDecorators.Clear();
         continue;
       }
 
@@ -702,11 +765,57 @@ public static class ReDocumentParser
     return lines;
   }
 
+  private static bool TryParseInlineBitfieldField(
+    string body,
+    int rowStart,
+    int lineEndExclusive,
+    string workLine,
+    string? inlineSlashNote,
+    out ReBodyLine.InlineBitfieldFieldLine? line,
+    out int newPos
+  )
+  {
+    line = null;
+    newPos = rowStart;
+    if (!InlineBitfieldHeadRegex.IsMatch(workLine))
+      return false;
+    var m = InlineBitfieldHeadRegex.Match(workLine);
+    var braceIdx = body.IndexOf('{', rowStart, lineEndExclusive - rowStart);
+    if (braceIdx < 0)
+      return false;
+    var i = braceIdx;
+    var inner = ParseBlock(body, ref i);
+    var (bits, sources, summary, blockNote) = ParseBitfieldInnerLines(inner);
+    var offset = int.Parse(
+      m.Groups[1].Value,
+      NumberStyles.HexNumber,
+      CultureInfo.InvariantCulture
+    );
+    var fieldName = m.Groups[2].Value;
+    var storage = m.Groups[3].Value;
+    line = new ReBodyLine.InlineBitfieldFieldLine(
+      offset,
+      fieldName,
+      storage,
+      bits,
+      sources,
+      summary,
+      blockNote,
+      MergeFieldNotes(null, inlineSlashNote)
+    );
+    newPos = i;
+    return true;
+  }
+
   /// <summary>
-  /// Parses <c>fn 0xADDR Name(params) [: ReturnType]</c>, the same with <c>static</c> instead of <c>fn</c>,
-  /// or a bare <c>0xADDR Name(params) [: ReturnType]</c>, and optional trailing <c>// note</c>.
+  /// Native function if <c>0xADDR</c> is followed by an identifier and <c>(</c> — not by <c>:</c> (field).
+  /// Optional prefix <c>fn</c> or <c>static</c> before the address. Optional trailing <c>// note</c>.
   /// </summary>
-  private static bool TryParseFunctionLine(string line, out ReBodyLine.FunctionLine? fl)
+  private static bool TryParseFunctionLine(
+    string line,
+    IReadOnlyList<string> decorators,
+    out ReBodyLine.FunctionLine? fl
+  )
   {
     fl = null;
     var work = line.Trim();
@@ -768,19 +877,49 @@ public static class ReDocumentParser
 
     while (i < work.Length && char.IsWhiteSpace(work[i]))
       i++;
-    var openP = work.IndexOf('(', i);
-    if (openP < 0)
+
+    var nameStart = i;
+    if (i >= work.Length || !(char.IsLetter(work[i]) || work[i] == '_'))
       return false;
-    var name = work.Substring(i, openP - i).Trim();
+    i++;
+    while (
+      i < work.Length
+      && (char.IsLetterOrDigit(work[i]) || work[i] == '_' || work[i] == '.')
+    )
+      i++;
+    var name = work.Substring(nameStart, i - nameStart);
     if (name.Length == 0)
       return false;
 
-    var closeP = work.LastIndexOf(')');
-    if (closeP <= openP)
+    while (i < work.Length && char.IsWhiteSpace(work[i]))
+      i++;
+    if (i >= work.Length || work[i] != '(')
       return false;
+
+    var openP = i;
+    i++;
+    var depth = 1;
+    while (i < work.Length && depth > 0)
+    {
+      var c = work[i];
+      if (c == '(')
+        depth++;
+      else if (c == ')')
+        depth--;
+      if (depth == 0)
+        break;
+      i++;
+    }
+
+    if (depth != 0)
+      return false;
+    var closeP = i;
     var parameters = work.Substring(openP + 1, closeP - openP - 1).Trim();
 
-    var after = work.Substring(closeP + 1).Trim();
+    i++;
+    while (i < work.Length && char.IsWhiteSpace(work[i]))
+      i++;
+    var after = work.Substring(i).Trim();
     string? retType = null;
     if (after.Length > 0)
     {
@@ -791,7 +930,14 @@ public static class ReDocumentParser
         retType = null;
     }
 
-    fl = new ReBodyLine.FunctionLine(address, name, parameters, retType, inlineNote);
+    fl = new ReBodyLine.FunctionLine(
+      address,
+      name,
+      parameters,
+      retType,
+      inlineNote,
+      decorators.Count == 0 ? Array.Empty<string>() : new List<string>(decorators)
+    );
     return true;
   }
 

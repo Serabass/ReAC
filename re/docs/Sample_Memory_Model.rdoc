@@ -8,8 +8,8 @@ document Sample_Memory_Model {
     ref CVector
     ref CMatrix
     ref CObject
-    ref CObjectObjectFlags1
-    ref CObjectObjectFlags2
+    ref CObjectFlags1
+    ref CObjectFlags2
     ref eWeaponType
   }
   summary "Example .re types showing inheritance, field offsets, optional native function entry points, and bitfield and enum annotations. Replace sources and names with your binary's provenance."
@@ -23,7 +23,7 @@ document Sample_Memory_Model {
     text "When you document exports or addresses, list them as fn entries on the relevant type. Cross-link external write-ups in source lines or notes."
   }
   section Bitfields {
-    text "Define named flag layouts as top-level bitfield Name : StorageScalar { N bitName; ... } where StorageScalar is any fixed-size scalar (byte, uint16, uint32, uint64, float, double, pointer, …). Bit indices are 0 .. 8*size-1. Optionally use a separate .re file; then use that name as the field type. Examples: CObjectObjectFlags1, CObjectObjectFlags2."
+    text "Define named flag layouts as top-level bitfield Name : StorageScalar { N bitName; ... } where StorageScalar is any fixed-size scalar (byte, uint16, uint32, uint64, float, double, pointer, …). Bit indices are 0 .. 8*size-1. Optionally use a separate .re file; then use that name as the field type. Examples: CObjectFlags1, CObjectFlags2."
   }
   section Enums {
     text "Top-level enum Name : StorageScalar { N EnumeratorName optional-quoted-description; ... }. Values are unsigned and must fit the storage width. Use the enum name as a field type (layout uses the underlying scalar). Example: eWeaponType on CWeapon.weaponType."

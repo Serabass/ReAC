@@ -10,6 +10,8 @@ public sealed class FlagBitDecl
 {
   public required int Bit { get; init; }
   public required string Name { get; init; }
+
+  public string? Description { get; init; }
 }
 
 public sealed class FieldDecl
@@ -84,6 +86,9 @@ public sealed class FunctionDecl
   public string? ReturnType { get; init; }
   public string? Note { get; init; }
   public Provenance? Provenance { get; init; }
+
+  /// <summary>Decorators from source lines <c>@name</c> immediately above this function.</summary>
+  public IReadOnlyList<string> Decorators { get; init; } = Array.Empty<string>();
 }
 
 public sealed class TypeDecl
@@ -164,4 +169,8 @@ public sealed class ProjectConfig
   public required string TypesDir { get; init; }
   public required string DocsDir { get; init; }
   public required string GeneratedDir { get; init; }
+
+  /// <summary>Predefined preprocessor names (for <c>#ifdef</c>); values used only for macro expansion.</summary>
+  public IReadOnlyDictionary<string, string> PredefinedMacros { get; init; } =
+    new Dictionary<string, string>(StringComparer.Ordinal);
 }

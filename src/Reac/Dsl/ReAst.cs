@@ -33,7 +33,7 @@ public abstract record ReTopLevel
   public sealed record BitfieldDef(
     string Name,
     string StorageName,
-    IReadOnlyList<(int Bit, string Name)> Bits,
+    IReadOnlyList<(int Bit, string Name, string? Description)> Bits,
     IReadOnlyList<string> SourceUrls,
     string? Summary,
     string? Note
@@ -62,6 +62,18 @@ public abstract record ReBodyLine
 
   public sealed record FieldLine(int Offset, string Name, TypeExpr Type, string? Note) : ReBodyLine;
 
+  /// <summary>Instance field with inline bit layout (synthetic bitfield type name derived as <c>TypeName_fieldName</c>).</summary>
+  public sealed record InlineBitfieldFieldLine(
+    int Offset,
+    string FieldName,
+    string StorageName,
+    IReadOnlyList<(int Bit, string Name, string? Description)> Bits,
+    IReadOnlyList<string> SourceUrls,
+    string? Summary,
+    string? BlockNote,
+    string? Note
+  ) : ReBodyLine;
+
   /// <summary>Global/static at absolute address (not an instance offset).</summary>
   public sealed record StaticFieldLine(ulong Address, string Name, TypeExpr Type, string? Note)
     : ReBodyLine;
@@ -74,7 +86,8 @@ public abstract record ReBodyLine
     string Name,
     string Parameters,
     string? ReturnType,
-    string? Note
+    string? Note,
+    IReadOnlyList<string> Decorators
   ) : ReBodyLine;
 
   public sealed record NoteFunctionLine(string FunctionName, string Text) : ReBodyLine;

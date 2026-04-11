@@ -309,6 +309,10 @@ public static class ProjectValidator
       case TypeExpr.Array a:
         CollectUnresolved(a.Element, typeName, fieldName, map, issues);
         break;
+      case TypeExpr.Generic g:
+        foreach (var a in g.TypeArguments)
+          CollectUnresolved(a, typeName, fieldName, map, issues);
+        break;
       case TypeExpr.Scalar:
         break;
     }
