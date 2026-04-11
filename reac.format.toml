@@ -10,3 +10,12 @@ pad_addresses = 8
 
 [fields]
 align_types = true
+
+# preserve | offset | name
+[sort]
+fields = "preserve"
+static_fields = "preserve"
+functions = "preserve"
+# preserve | value | name
+bitfield_bits = "preserve"
+enum_values = "preserve"

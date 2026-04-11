@@ -4,6 +4,25 @@ using Reac.Ir;
 
 namespace Reac.Dsl;
 
+file static class ReBodySortHelpers
+{
+  public static string FieldBindingName(ReBodyLine line) =>
+    line switch
+    {
+      ReBodyLine.FieldLine fl => fl.Name,
+      ReBodyLine.InlineBitfieldFieldLine ib => ib.FieldName,
+      _ => throw new InvalidOperationException("Expected field or inline bitfield line"),
+    };
+
+  public static int FieldOffset(ReBodyLine line) =>
+    line switch
+    {
+      ReBodyLine.FieldLine fl => fl.Offset,
+      ReBodyLine.InlineBitfieldFieldLine ib => ib.Offset,
+      _ => 0,
+    };
+}
+
 /// <summary>Parsable .re text from AST. Round-trip may drop // comments (see parser). Uses LF line endings.</summary>
 public static class ReDocumentFormatter
 {
@@ -104,7 +123,8 @@ public static class ReDocumentFormatter
       bf.Summary,
       bf.Note,
       o,
-      level + 1
+      level + 1,
+      o.SortBitfieldBits
     );
     sb.Append(ind).Append("}\n");
   }
@@ -120,7 +140,8 @@ public static class ReDocumentFormatter
       ed.Summary,
       ed.Note,
       o,
-      level + 1
+      level + 1,
+      o.SortEnumValues
     );
     sb.Append(ind).Append("}\n");
   }
@@ -132,7 +153,8 @@ public static class ReDocumentFormatter
     string? summary,
     string? note,
     FormatOptions o,
-    int level
+    int level,
+    LineSortMode lineSort
   )
   {
     var ind = o.Indent(level);
@@ -143,7 +165,7 @@ public static class ReDocumentFormatter
     if (note != null)
       sb.Append(ind).Append("note ").Append(ReQuotedString.DoubleQuote(note)).Append('\n');
 
-    foreach (var (value, name, desc) in values)
+    foreach (var (value, name, desc) in OrderNamedNumericTuples(values, lineSort))
     {
       sb.Append(ind)
         .Append(ReHexFormat.Format(value, HexKind.EnumOrBitIndex, o))
@@ -167,10 +189,195 @@ public static class ReDocumentFormatter
     return m;
   }
 
+  private static List<(ulong Value, string Name, string? Description)> OrderNamedNumericTuples(
+    IEnumerable<(ulong Value, string Name, string? Description)> values,
+    LineSortMode mode
+  )
+  {
+    var list = values.ToList();
+    if (mode == LineSortMode.Preserve || list.Count <= 1)
+      return list;
+    if (mode == LineSortMode.ByNumeric)
+    {
+      list.Sort(
+        (a, b) =>
+        {
+          var c = a.Value.CompareTo(b.Value);
+          return c != 0
+            ? c
+            : string.Compare(a.Name, b.Name, StringComparison.OrdinalIgnoreCase);
+        }
+      );
+    }
+    else
+    {
+      list.Sort((a, b) => string.Compare(a.Name, b.Name, StringComparison.OrdinalIgnoreCase));
+    }
+
+    return list;
+  }
+
+  /// <summary>
+  /// When any sort mode is active: header lines (module, source, summary, note) first in file order,
+  /// then fields (sorted) with <c>note field</c> lines after each name, then statics, then functions with <c>note fn</c>.
+  /// </summary>
+  private static List<ReBodyLine> ApplyBodySort(IReadOnlyList<ReBodyLine> body, FormatOptions o)
+  {
+    if (
+      o.SortFields == LineSortMode.Preserve
+      && o.SortStaticFields == LineSortMode.Preserve
+      && o.SortFunctions == LineSortMode.Preserve
+    )
+      return body.ToList();
+
+    var header = new List<ReBodyLine>();
+    var notesByField = new Dictionary<string, List<ReBodyLine.NoteFieldLine>>(StringComparer.OrdinalIgnoreCase);
+    var notesByFn = new Dictionary<string, List<ReBodyLine.NoteFunctionLine>>(StringComparer.OrdinalIgnoreCase);
+    var fields = new List<ReBodyLine>();
+    var statics = new List<ReBodyLine.StaticFieldLine>();
+    var funcs = new List<ReBodyLine.FunctionLine>();
+
+    foreach (var line in body)
+    {
+      switch (line)
+      {
+        case ReBodyLine.NoteFieldLine nf:
+          if (!notesByField.TryGetValue(nf.FieldName, out var lf))
+          {
+            lf = new List<ReBodyLine.NoteFieldLine>();
+            notesByField[nf.FieldName] = lf;
+          }
+
+          lf.Add(nf);
+          break;
+        case ReBodyLine.NoteFunctionLine nfn:
+          if (!notesByFn.TryGetValue(nfn.FunctionName, out var lfn))
+          {
+            lfn = new List<ReBodyLine.NoteFunctionLine>();
+            notesByFn[nfn.FunctionName] = lfn;
+          }
+
+          lfn.Add(nfn);
+          break;
+        case ReBodyLine.FieldLine:
+        case ReBodyLine.InlineBitfieldFieldLine:
+          fields.Add(line);
+          break;
+        case ReBodyLine.StaticFieldLine sf:
+          statics.Add(sf);
+          break;
+        case ReBodyLine.FunctionLine fn:
+          funcs.Add(fn);
+          break;
+        case ReBodyLine.ModuleLine:
+        case ReBodyLine.SourceLine:
+        case ReBodyLine.SummaryLine:
+        case ReBodyLine.NoteEntityLine:
+          header.Add(line);
+          break;
+        default:
+          throw new ArgumentOutOfRangeException(nameof(line));
+      }
+    }
+
+    if (o.SortFields != LineSortMode.Preserve)
+    {
+      fields.Sort(
+        (a, b) =>
+        {
+          if (o.SortFields == LineSortMode.ByNumeric)
+          {
+            var c = ReBodySortHelpers.FieldOffset(a).CompareTo(ReBodySortHelpers.FieldOffset(b));
+            return c != 0
+              ? c
+              : string.Compare(
+                ReBodySortHelpers.FieldBindingName(a),
+                ReBodySortHelpers.FieldBindingName(b),
+                StringComparison.OrdinalIgnoreCase
+              );
+          }
+
+          return string.Compare(
+            ReBodySortHelpers.FieldBindingName(a),
+            ReBodySortHelpers.FieldBindingName(b),
+            StringComparison.OrdinalIgnoreCase
+          );
+        }
+      );
+    }
+
+    if (o.SortStaticFields != LineSortMode.Preserve)
+    {
+      statics.Sort(
+        (a, b) =>
+        {
+          if (o.SortStaticFields == LineSortMode.ByNumeric)
+          {
+            var c = a.Address.CompareTo(b.Address);
+            return c != 0 ? c : string.Compare(a.Name, b.Name, StringComparison.OrdinalIgnoreCase);
+          }
+
+          return string.Compare(a.Name, b.Name, StringComparison.OrdinalIgnoreCase);
+        }
+      );
+    }
+
+    if (o.SortFunctions != LineSortMode.Preserve)
+    {
+      funcs.Sort(
+        (a, b) =>
+        {
+          if (o.SortFunctions == LineSortMode.ByNumeric)
+          {
+            var c = a.Address.CompareTo(b.Address);
+            return c != 0 ? c : string.Compare(a.Name, b.Name, StringComparison.OrdinalIgnoreCase);
+          }
+
+          return string.Compare(a.Name, b.Name, StringComparison.OrdinalIgnoreCase);
+        }
+      );
+    }
+
+    var result = new List<ReBodyLine>();
+    result.AddRange(header);
+
+    foreach (var f in fields)
+    {
+      result.Add(f);
+      var name = ReBodySortHelpers.FieldBindingName(f);
+      if (notesByField.TryGetValue(name, out var ns))
+      {
+        result.AddRange(ns);
+        notesByField.Remove(name);
+      }
+    }
+
+    foreach (var kv in notesByField)
+      result.AddRange(kv.Value);
+
+    result.AddRange(statics);
+
+    foreach (var fn in funcs)
+    {
+      result.Add(fn);
+      if (notesByFn.TryGetValue(fn.Name, out var ns))
+      {
+        result.AddRange(ns);
+        notesByFn.Remove(fn.Name);
+      }
+    }
+
+    foreach (var kv in notesByFn)
+      result.AddRange(kv.Value);
+
+    return result;
+  }
+
   private static void AppendBodyLines(StringBuilder sb, IReadOnlyList<ReBodyLine> body, FormatOptions o, int level)
   {
-    var maxW = o.AlignFieldTypes ? MaxFieldNameWidth(body) : 0;
-    foreach (var line in body)
+    var ordered = ApplyBodySort(body, o);
+    var maxW = o.AlignFieldTypes ? MaxFieldNameWidth(ordered) : 0;
+    foreach (var line in ordered)
       AppendBodyLine(sb, line, o, level, maxW);
   }
 
@@ -283,7 +490,8 @@ public static class ReDocumentFormatter
       ib.Summary,
       ib.BlockNote,
       o,
-      level + 1
+      level + 1,
+      o.SortBitfieldBits
     );
     sb.Append(ind).Append('}');
     if (ib.Note != null)

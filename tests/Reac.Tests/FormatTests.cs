@@ -57,6 +57,56 @@ public class FormatTests
   }
 
   [Fact]
+  public void SortFields_ByName_ReordersLines()
+  {
+    var tops = ReDocumentParser.ParseDocument(
+      """
+      class T {
+        0x020 bb : byte
+        0x010 aa : byte
+      }
+      """
+    );
+    var o = FormatOptions.Default with { SortFields = LineSortMode.ByName };
+    var formatted = ReDocumentFormatter.FormatDocument(tops, o);
+    Assert.True(formatted.IndexOf("aa :", StringComparison.Ordinal) < formatted.IndexOf("bb :", StringComparison.Ordinal));
+  }
+
+  [Fact]
+  public void SortStaticFields_ByAddress_ReordersLines()
+  {
+    var tops = ReDocumentParser.ParseDocument(
+      """
+      class T {
+        static 0x20 b : byte
+        static 0x10 a : byte
+      }
+      """
+    );
+    var o = FormatOptions.Default with { SortStaticFields = LineSortMode.ByNumeric };
+    var formatted = ReDocumentFormatter.FormatDocument(tops, o);
+    Assert.True(formatted.IndexOf("a :", StringComparison.Ordinal) < formatted.IndexOf("b :", StringComparison.Ordinal));
+  }
+
+  [Fact]
+  public void SortBitfieldBits_ByValue_Reorders()
+  {
+    var tops = ReDocumentParser.ParseDocument(
+      """
+      bitfield B : byte {
+        0x001 x
+        0x000 y
+      }
+      """
+    );
+    var o = FormatOptions.Default with { SortBitfieldBits = LineSortMode.ByNumeric };
+    var formatted = ReDocumentFormatter.FormatDocument(tops, o);
+    Assert.True(
+      formatted.IndexOf("0x000", StringComparison.Ordinal) < formatted.IndexOf("0x001", StringComparison.Ordinal)
+    );
+  }
+
+  [Fact]
   public void AlignFieldTypes_PadsNames_BeforeColon()
   {
     var tops = ReDocumentParser.ParseDocument(SampleStruct);
@@ -88,6 +138,13 @@ public class FormatTests
 
         [fields]
         align_types = true
+
+        [sort]
+        fields = "name"
+        static_fields = "address"
+        functions = "name"
+        bitfield_bits = "value"
+        enum_values = "name"
         """
       );
       var o = FormatConfigLoader.Load(path);
@@ -97,6 +154,11 @@ public class FormatTests
       Assert.Equal(2, o.PadSizes);
       Assert.Equal(6, o.PadAddresses);
       Assert.True(o.AlignFieldTypes);
+      Assert.Equal(LineSortMode.ByName, o.SortFields);
+      Assert.Equal(LineSortMode.ByNumeric, o.SortStaticFields);
+      Assert.Equal(LineSortMode.ByName, o.SortFunctions);
+      Assert.Equal(LineSortMode.ByNumeric, o.SortBitfieldBits);
+      Assert.Equal(LineSortMode.ByName, o.SortEnumValues);
     }
     finally
     {

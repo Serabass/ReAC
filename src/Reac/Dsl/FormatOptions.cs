@@ -2,6 +2,19 @@ using System.Globalization;
 
 namespace Reac.Dsl;
 
+/// <summary>How to order lines when <see cref="ReDocumentFormatter"/> runs (see <c>[sort]</c> in <c>reac.format.toml</c>).</summary>
+public enum LineSortMode
+{
+  /// <summary>Keep parser order.</summary>
+  Preserve,
+
+  /// <summary>Field offset, static/function address, bit index, or enum value.</summary>
+  ByNumeric,
+
+  /// <summary>Identifier name (case-insensitive).</summary>
+  ByName,
+}
+
 /// <summary>Output style for <see cref="ReDocumentFormatter"/>; usually loaded from <c>reac.format.toml</c>.</summary>
 public sealed record FormatOptions
 {
@@ -17,6 +30,21 @@ public sealed record FormatOptions
   public int PadAddresses { get; init; } = 8;
 
   public bool AlignFieldTypes { get; init; }
+
+  /// <summary>Instance fields and inline bitfield fields (by offset or name).</summary>
+  public LineSortMode SortFields { get; init; } = LineSortMode.Preserve;
+
+  /// <summary>Static globals (by address or name).</summary>
+  public LineSortMode SortStaticFields { get; init; } = LineSortMode.Preserve;
+
+  /// <summary>Native functions (by address or name).</summary>
+  public LineSortMode SortFunctions { get; init; } = LineSortMode.Preserve;
+
+  /// <summary>Lines inside top-level <c>bitfield</c> / inline bitfield blocks.</summary>
+  public LineSortMode SortBitfieldBits { get; init; } = LineSortMode.Preserve;
+
+  /// <summary>Lines inside <c>enum</c> blocks.</summary>
+  public LineSortMode SortEnumValues { get; init; } = LineSortMode.Preserve;
 
   public static FormatOptions Default { get; } = new();
 

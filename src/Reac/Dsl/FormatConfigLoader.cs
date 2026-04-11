@@ -55,8 +55,64 @@ public static class FormatConfigLoader
         o = o with { AlignFieldTypes = ExpectBool(at, "fields.align_types") };
     }
 
+    if (root.TryGetValue("sort", out var sortObj) && sortObj is TomlTable sort)
+    {
+      if (sort.TryGetValue("fields", out var sf))
+        o = o with { SortFields = ParseSortFields(sf?.ToString(), "sort.fields") };
+      if (sort.TryGetValue("static_fields", out var ssf))
+        o = o with
+        {
+          SortStaticFields = ParseSortAddressName(ssf?.ToString(), "sort.static_fields"),
+        };
+      if (sort.TryGetValue("functions", out var sfn))
+        o = o with { SortFunctions = ParseSortAddressName(sfn?.ToString(), "sort.functions") };
+      if (sort.TryGetValue("bitfield_bits", out var sbb))
+        o = o with
+        {
+          SortBitfieldBits = ParseSortValueName(sbb?.ToString(), "sort.bitfield_bits"),
+        };
+      if (sort.TryGetValue("enum_values", out var sev))
+        o = o with { SortEnumValues = ParseSortValueName(sev?.ToString(), "sort.enum_values") };
+    }
+
     return o;
   }
+
+  private static LineSortMode ParseSortFields(string? s, string key) =>
+    s?.Trim().ToLowerInvariant() switch
+    {
+      null or "" or "preserve" => LineSortMode.Preserve,
+      "offset" => LineSortMode.ByNumeric,
+      "name" => LineSortMode.ByName,
+      _ =>
+        throw new InvalidOperationException(
+          $"{key} must be \"preserve\", \"offset\", or \"name\""
+        ),
+    };
+
+  private static LineSortMode ParseSortAddressName(string? s, string key) =>
+    s?.Trim().ToLowerInvariant() switch
+    {
+      null or "" or "preserve" => LineSortMode.Preserve,
+      "address" => LineSortMode.ByNumeric,
+      "name" => LineSortMode.ByName,
+      _ =>
+        throw new InvalidOperationException(
+          $"{key} must be \"preserve\", \"address\", or \"name\""
+        ),
+    };
+
+  private static LineSortMode ParseSortValueName(string? s, string key) =>
+    s?.Trim().ToLowerInvariant() switch
+    {
+      null or "" or "preserve" => LineSortMode.Preserve,
+      "value" => LineSortMode.ByNumeric,
+      "name" => LineSortMode.ByName,
+      _ =>
+        throw new InvalidOperationException(
+          $"{key} must be \"preserve\", \"value\", or \"name\""
+        ),
+    };
 
   /// <param name="explicitPath">If set, this file must exist.</param>
   public static FormatOptions LoadForProject(string projectRoot, string? explicitPath)
