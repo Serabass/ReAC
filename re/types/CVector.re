@@ -1,4 +1,4 @@
-class CVector size 0x0C {
+class CVector {
   module Core.Main
   source "https://gtamods.com/wiki/Memory_Addresses_(VC)#CVector"
 
