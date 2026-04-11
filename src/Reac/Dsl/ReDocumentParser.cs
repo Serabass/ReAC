@@ -702,7 +702,10 @@ public static class ReDocumentParser
     return lines;
   }
 
-  /// <summary>Parses <c>fn 0xADDR Name(params) [: ReturnType]</c> and optional trailing <c>// note</c>.</summary>
+  /// <summary>
+  /// Parses <c>fn 0xADDR Name(params) [: ReturnType]</c>, the same with <c>static</c> instead of <c>fn</c>,
+  /// or a bare <c>0xADDR Name(params) [: ReturnType]</c>, and optional trailing <c>// note</c>.
+  /// </summary>
   private static bool TryParseFunctionLine(string line, out ReBodyLine.FunctionLine? fl)
   {
     fl = null;
@@ -715,16 +718,39 @@ public static class ReDocumentParser
       work = work[..cmt].Trim();
     }
 
+    int i;
     if (
-      work.Length < 4
-      || !work.StartsWith("fn", StringComparison.OrdinalIgnoreCase)
-      || !char.IsWhiteSpace(work[2])
+      work.Length >= 4
+      && work.StartsWith("fn", StringComparison.OrdinalIgnoreCase)
+      && char.IsWhiteSpace(work[2])
     )
+    {
+      i = 3;
+      while (i < work.Length && char.IsWhiteSpace(work[i]))
+        i++;
+    }
+    else if (
+      work.Length >= 8
+      && work.StartsWith("static", StringComparison.OrdinalIgnoreCase)
+      && char.IsWhiteSpace(work[6])
+    )
+    {
+      i = 7;
+      while (i < work.Length && char.IsWhiteSpace(work[i]))
+        i++;
+    }
+    else if (
+      work.Length >= 3
+      && work[0] == '0'
+      && (work[1] == 'x' || work[1] == 'X')
+      && work.Length > 2
+      && Uri.IsHexDigit(work[2])
+    )
+    {
+      i = 0;
+    }
+    else
       return false;
-
-    var i = 3;
-    while (i < work.Length && char.IsWhiteSpace(work[i]))
-      i++;
 
     if (i + 1 >= work.Length || work[i] != '0' || (work[i + 1] != 'x' && work[i + 1] != 'X'))
       return false;

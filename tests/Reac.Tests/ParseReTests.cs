@@ -189,4 +189,54 @@ public class ParseReTests
     Assert.Equal("Fire", nfn.FunctionName);
     Assert.Equal("long note", nfn.Text);
   }
+
+  [Fact]
+  public void Parse_static_fn_native_same_as_fn()
+  {
+    const string src = """
+      class C {
+        module M
+        static 0x0041C2F0 CreateMapCouldMoveInThisArea(float, float) : int
+        static 0x0041D350 IsThisVehicleInteresting (CVehicle* vehicle) : bool // note
+      }
+      """;
+    var doc = ReDocumentParser.ParseDocument(src);
+    var td = Assert.IsType<ReTopLevel.TypeDef>(Assert.Single(doc));
+    var fns = td.Body.OfType<ReBodyLine.FunctionLine>().ToList();
+    Assert.Equal(2, fns.Count);
+    Assert.Equal(0x0041C2F0, fns[0].Address);
+    Assert.Equal("CreateMapCouldMoveInThisArea", fns[0].Name);
+    Assert.Equal("float, float", fns[0].Parameters);
+    Assert.Equal("int", fns[0].ReturnType);
+    Assert.Null(fns[0].Note);
+    Assert.Equal(0x0041D350, fns[1].Address);
+    Assert.Equal("IsThisVehicleInteresting", fns[1].Name);
+    Assert.Equal("CVehicle* vehicle", fns[1].Parameters);
+    Assert.Equal("bool", fns[1].ReturnType);
+    Assert.Equal("note", fns[1].Note);
+  }
+
+  [Fact]
+  public void Parse_bare_hex_fn_native_without_fn_keyword()
+  {
+    const string src = """
+      class G {
+        module M
+        0x0042E900 Close() : uint8
+        0x00451550 Process(): int
+      }
+      """;
+    var doc = ReDocumentParser.ParseDocument(src);
+    var td = Assert.IsType<ReTopLevel.TypeDef>(Assert.Single(doc));
+    var fns = td.Body.OfType<ReBodyLine.FunctionLine>().ToList();
+    Assert.Equal(2, fns.Count);
+    Assert.Equal(0x0042E900, fns[0].Address);
+    Assert.Equal("Close", fns[0].Name);
+    Assert.Equal("", fns[0].Parameters);
+    Assert.Equal("uint8", fns[0].ReturnType);
+    Assert.Equal(0x00451550, fns[1].Address);
+    Assert.Equal("Process", fns[1].Name);
+    Assert.Equal("", fns[1].Parameters);
+    Assert.Equal("int", fns[1].ReturnType);
+  }
 }
