@@ -22,9 +22,9 @@ class CObject : CPhysical {
   0x191 byteVehicleExtraColor     : byte
 }
 
+@source("https://gtamods.com/wiki/Memory_Addresses_(VC)#CObject")
+@summary("First object flags byte (VC); names from GTAMods wiki.")
 bitfield CObjectFlags1 : byte {
-  @source("https://gtamods.com/wiki/Memory_Addresses_(VC)#CObject")
-  @summary("First object flags byte (VC); names from GTAMods wiki.")
   0x000 bIsPickupObject
   0x001 bDoCircleEffect
   0x002 bRenderPickupQuantity
@@ -35,9 +35,9 @@ bitfield CObjectFlags1 : byte {
   0x007 bIsVehicleComponent
 }
 
+@summary("Second object flags byte (VC); names from GTAMods wiki.")
+@source("https://gtamods.com/wiki/Memory_Addresses_(VC)#CObject")
 bitfield CObjectFlags2 : byte {
-  @source("https://gtamods.com/wiki/Memory_Addresses_(VC)#CObject")
-  @summary("Second object flags byte (VC); names from GTAMods wiki.")
   0x000 bSpecialLighting
   0x001 bNoVehicleCollisionWhenDetached
 }

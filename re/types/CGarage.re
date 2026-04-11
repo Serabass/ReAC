@@ -45,6 +45,7 @@ class CGarage {
   static 0x007D7B20 vercettiEstate2 : CGarage*
   static 0x007D7B48 vercettiEstate3 : CGarage*
   static 0x007D7B70 vercettiEstate4 : CGarage*
+
   0x0042E900 Close() : uint8
   0x0042E910 Open() : uint8
   0x000 ideModel       : dword
@@ -59,9 +60,9 @@ class CGarage {
   0x025 bombType       : eBombType
 }
 
+@source("https://gtamods.com/wiki/Memory_Addresses_(VC)#Garages")
+@summary("Bomb Type")
 enum eBombType : byte {
-  @source("https://gtamods.com/wiki/Memory_Addresses_(VC)#Garages")
-  @summary("Bomb Type")
   0x000 none
   0x001 timed
   0x002 engineIgnition

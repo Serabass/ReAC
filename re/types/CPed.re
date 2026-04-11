@@ -20,9 +20,9 @@ class CPed : CPhysical {
   0x63D canBeDamaged         : bool
 }
 
+@source("https://gtamods.com/wiki/Memory_Addresses_(VC)#CPed")
+@summary("Ped type enum")
 enum ePedType : byte {
-  @source("https://gtamods.com/wiki/Memory_Addresses_(VC)#CPed")
-  @summary("Ped type enum")
   0x000 PLAYER1 "Primary player definition"
   0x001 PLAYER2 "Secondary player definition"
   0x006 COP "Cop"

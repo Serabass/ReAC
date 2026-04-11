@@ -1,8 +1,10 @@
 @source("https://gtamods.com/wiki/Memory_Addresses_(VC)#CPhysical")
 class CPhysical : CEntity {
   module Core.Main
+
   @note("Returns whether this physical is colliding with the given entity.")
   0x004B9010 GetHasCollidedWith(CEntity*) : bool
+
   0x064 audioEntity            : uint32
   0x06C lastCollisionTime      : uint32
   0x070 moveSpeed              : CVector
@@ -20,8 +22,8 @@ class CPhysical : CEntity {
   0x11D originLevel            : byte
 }
 
+@source("https://gtamods.com/wiki/Memory_Addresses_(VC)#CPhysical")
+@summary("First physical flags byte (VC); names from GTAMods wiki.")
 bitfield CPhysicalFlags1 : byte {
-  @source("https://gtamods.com/wiki/Memory_Addresses_(VC)#CPhysical")
-  @summary("First physical flags byte (VC); names from GTAMods wiki.")
   0x004 bInWater
 }
