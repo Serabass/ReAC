@@ -1,7 +1,7 @@
 @source("https://gtamods.com/wiki/Memory_Addresses_(VC)#CVehicle")
 class CVehicle : CPhysical size 0x00C {
   module Core.Main
-  static 0x0069A61A carFriction : uint8
+  static 0x0069A61A carFriction : byte "wiki: Car friction/surface (byte), not float; snapshot is from PE image"
   0x23C currentRadioStation : eRadioStation
   0x240 horn                : bool
   0x245 siren               : bool

@@ -453,6 +453,9 @@ public static class ReDocumentParser
           continue;
         }
 
+        if (meta is ReBodyLine.ExePathLine or ReBodyLine.Sha256ExpectedLine)
+          throw new ParseException("bitfield: @exe and @sha256 are not allowed in block");
+
         throw new ParseException("bitfield: only @source, @summary, @note allowed in block");
       }
 
@@ -560,6 +563,9 @@ public static class ReDocumentParser
           note = ne.Text;
           continue;
         }
+
+        if (meta is ReBodyLine.ExePathLine or ReBodyLine.Sha256ExpectedLine)
+          throw new ParseException("enum: @exe and @sha256 are not allowed in block");
 
         throw new ParseException("enum: only @source, @summary, @note allowed in block");
       }
@@ -798,7 +804,54 @@ public static class ReDocumentParser
       return true;
     }
 
+    if (decName.Equals("exe", StringComparison.OrdinalIgnoreCase))
+    {
+      if (!StringLiterals.TryParse(w, ref j, out var exePath))
+        throw new ParseException("@exe: bad string");
+      StringLiterals.SkipNoise(w, ref j);
+      if (j >= w.Length || w[j] != ')')
+        throw new ParseException("@exe: expected ')'");
+      j++;
+      StringLiterals.SkipNoise(w, ref j);
+      if (j < w.Length)
+        throw new ParseException("@exe: trailing content");
+      meta = new ReBodyLine.ExePathLine(exePath);
+      return true;
+    }
+
+    if (decName.Equals("sha256", StringComparison.OrdinalIgnoreCase))
+    {
+      if (!StringLiterals.TryParse(w, ref j, out var hexRaw))
+        throw new ParseException("@sha256: bad string");
+      StringLiterals.SkipNoise(w, ref j);
+      if (j >= w.Length || w[j] != ')')
+        throw new ParseException("@sha256: expected ')'");
+      j++;
+      StringLiterals.SkipNoise(w, ref j);
+      if (j < w.Length)
+        throw new ParseException("@sha256: trailing content");
+      meta = new ReBodyLine.Sha256ExpectedLine(NormalizeSha256HexOrThrow(hexRaw));
+      return true;
+    }
+
     throw new ParseException($"Unknown decorator @{decName}(...)");
+  }
+
+  private static string NormalizeSha256HexOrThrow(string raw)
+  {
+    var s = raw.Trim();
+    if (s.StartsWith("0x", StringComparison.OrdinalIgnoreCase))
+      s = s[2..];
+    s = s.Replace(" ", "").Replace("-", "");
+    if (s.Length != 64)
+      throw new ParseException("@sha256: expected 64 hex characters after normalization");
+    foreach (var c in s)
+    {
+      if (!Uri.IsHexDigit(c))
+        throw new ParseException("@sha256: non-hex character in hash");
+    }
+
+    return s.ToLowerInvariant();
   }
 
   private static List<ReBodyLine> ParseTypeBodyLines(string body)
@@ -893,6 +946,22 @@ public static class ReDocumentParser
             lineStart = ni;
             pendingDecorators.Clear();
             moduleLineJustEmitted = false;
+            continue;
+          }
+
+          if (meta is ReBodyLine.ExePathLine ex)
+          {
+            lines.Add(ex);
+            moduleLineJustEmitted = false;
+            lineStart = ni;
+            continue;
+          }
+
+          if (meta is ReBodyLine.Sha256ExpectedLine sh)
+          {
+            lines.Add(sh);
+            moduleLineJustEmitted = false;
+            lineStart = ni;
             continue;
           }
         }

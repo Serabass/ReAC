@@ -258,6 +258,19 @@ public static class ProjectValidator
       }
     }
 
+    foreach (var mod in project.Modules)
+    {
+      if (mod.ExePath != null && !mod.ExeFilePresent)
+        issues.Add(
+          new ValidationIssue
+          {
+            IsError = false,
+            Message =
+              $"Module '{mod.Name}': exe not found at '{mod.ExeResolvedFullPath}' — add the file (see .gitignore) and matching @sha256; HTML static snapshots stay empty until then.",
+          }
+        );
+    }
+
     return issues;
   }
 

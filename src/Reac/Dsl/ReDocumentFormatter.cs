@@ -104,7 +104,13 @@ public static class ReDocumentFormatter
     var rest = new List<ReBodyLine>();
     foreach (var l in body)
     {
-      if (l is ReBodyLine.SourceLine or ReBodyLine.SummaryLine or ReBodyLine.NoteEntityLine)
+      if (
+        l is ReBodyLine.SourceLine
+          or ReBodyLine.SummaryLine
+          or ReBodyLine.NoteEntityLine
+          or ReBodyLine.ExePathLine
+          or ReBodyLine.Sha256ExpectedLine
+      )
         prefix.Add(l);
       else
         rest.Add(l);
@@ -125,6 +131,12 @@ public static class ReDocumentFormatter
         break;
       case ReBodyLine.NoteEntityLine ne:
         sb.Append(ind).Append("@note(").Append(ReQuotedString.DoubleQuote(ne.Text)).Append(")\n");
+        break;
+      case ReBodyLine.ExePathLine xp:
+        sb.Append(ind).Append("@exe(").Append(ReQuotedString.DoubleQuote(xp.Path)).Append(")\n");
+        break;
+      case ReBodyLine.Sha256ExpectedLine sh:
+        sb.Append(ind).Append("@sha256(").Append(ReQuotedString.DoubleQuote(sh.Hex)).Append(")\n");
         break;
       default:
         throw new ArgumentOutOfRangeException(nameof(line));
@@ -303,6 +315,8 @@ public static class ReDocumentFormatter
         case ReBodyLine.SourceLine:
         case ReBodyLine.SummaryLine:
         case ReBodyLine.NoteEntityLine:
+        case ReBodyLine.ExePathLine:
+        case ReBodyLine.Sha256ExpectedLine:
           header.Add(line);
           break;
         default:
@@ -451,6 +465,12 @@ public static class ReDocumentFormatter
         break;
       case ReBodyLine.NoteEntityLine ne:
         sb.Append(ind).Append("@note(").Append(ReQuotedString.DoubleQuote(ne.Text)).Append(")\n");
+        break;
+      case ReBodyLine.ExePathLine xp:
+        sb.Append(ind).Append("@exe(").Append(ReQuotedString.DoubleQuote(xp.Path)).Append(")\n");
+        break;
+      case ReBodyLine.Sha256ExpectedLine sh:
+        sb.Append(ind).Append("@sha256(").Append(ReQuotedString.DoubleQuote(sh.Hex)).Append(")\n");
         break;
       case ReBodyLine.FieldLine fl:
         sb.Append(ind).Append(ReHexFormat.FormatInt(fl.Offset, HexKind.Offset, o)).Append(' ');

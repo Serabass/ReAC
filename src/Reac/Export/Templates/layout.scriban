@@ -18,6 +18,9 @@
 <option value="dark">Dark</option>
 </select>
 </div>
+{{ if exe_banner != "" }}
+<div class="exe-banner">{{ exe_banner }}</div>
+{{ end }}
 <div class="layout">
 {{ sidebar }}
 {{ main }}

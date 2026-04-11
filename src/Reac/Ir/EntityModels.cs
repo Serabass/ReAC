@@ -117,6 +117,22 @@ public sealed class ModuleDecl
   public required string Name { get; init; }
   public string? Summary { get; init; }
   public string? Note { get; init; }
+
+  /// <summary>Optional: verified at load time against <see cref="ExeSha256Hex"/>.</summary>
+  public string? ExePath { get; init; }
+
+  /// <summary>Optional: lowercase 64-char SHA-256 hex of the file at <see cref="ExePath"/>.</summary>
+  public string? ExeSha256Hex { get; init; }
+
+  /// <summary>Absolute path resolved from <see cref="ExePath"/> (set when @exe was declared).</summary>
+  public string? ExeResolvedFullPath { get; init; }
+
+  /// <summary>True when the exe file existed at load time (hash was verified in that case).</summary>
+  public bool ExeFilePresent { get; init; }
+
+  /// <summary>SHA-256 of the file on disk after a successful hash check; null if <see cref="ExeFilePresent"/> is false.</summary>
+  public string? ExeActualSha256Hex { get; init; }
+
   public required string FilePath { get; init; }
 }
 

@@ -1,3 +1,4 @@
+using System.Security.Cryptography;
 using Reac;
 using Reac.Dsl;
 using Reac.Layout;
@@ -112,6 +113,7 @@ public static class ProjectLoader
 
     var modules = new List<ModuleDecl>();
     var types = new List<TypeDecl>();
+    var projectRootFull = Path.GetFullPath(projectRoot);
     foreach (var (path, tops) in parsedFiles)
     {
       foreach (var t in tops)
@@ -121,7 +123,7 @@ public static class ProjectLoader
           case ReTopLevel.Target:
             break;
           case ReTopLevel.Module m:
-            modules.Add(ToModule(m, path));
+            modules.Add(ToModule(m, path, projectRootFull));
             break;
           case ReTopLevel.TypeDef td:
             types.Add(ToType(td, path, bitfieldMap, enumMap));
@@ -160,7 +162,7 @@ public static class ProjectLoader
     return new ProjectIr
     {
       Config = cfg,
-      ProjectRoot = Path.GetFullPath(projectRoot),
+      ProjectRoot = projectRootFull,
       Targets = targets,
       Modules = modules,
       Types = typesWithSizes,
@@ -324,14 +326,68 @@ public static class ProjectLoader
       FilePath = file,
     };
 
-  private static ModuleDecl ToModule(ReTopLevel.Module m, string file) =>
-    new()
+  private static ModuleDecl ToModule(ReTopLevel.Module m, string file, string projectRoot)
+  {
+    string? exe = null;
+    string? sha = null;
+    foreach (var line in m.Body)
+    {
+      if (line is ReBodyLine.ExePathLine e)
+      {
+        if (exe != null)
+          throw new InvalidOperationException($"Module '{m.Name}': duplicate @exe (see {file})");
+        exe = e.Path;
+      }
+      else if (line is ReBodyLine.Sha256ExpectedLine s)
+      {
+        if (sha != null)
+          throw new InvalidOperationException($"Module '{m.Name}': duplicate @sha256 (see {file})");
+        sha = s.Hex;
+      }
+    }
+
+    if (exe != null ^ sha != null)
+      throw new InvalidOperationException(
+        $"Module '{m.Name}': @exe and @sha256 must both be set or both omitted (see {file})"
+      );
+
+    string? resolvedFull = null;
+    var present = false;
+    string? actualSha = null;
+    if (exe != null && sha != null)
+    {
+      resolvedFull = Path.IsPathRooted(exe)
+        ? Path.GetFullPath(exe)
+        : Path.GetFullPath(
+          Path.Combine(projectRoot, exe.Replace('/', Path.DirectorySeparatorChar))
+        );
+      present = File.Exists(resolvedFull);
+      if (present)
+      {
+        using var alg = SHA256.Create();
+        using var fs = File.OpenRead(resolvedFull);
+        var actualBytes = alg.ComputeHash(fs);
+        actualSha = Convert.ToHexString(actualBytes).ToLowerInvariant();
+        if (!string.Equals(actualSha, sha, StringComparison.Ordinal))
+          throw new InvalidOperationException(
+            $"Module '{m.Name}': exe SHA-256 mismatch (expected {sha}, got {actualSha}, file: {resolvedFull}) (see {file})"
+          );
+      }
+    }
+
+    return new ModuleDecl
     {
       Name = m.Name,
       Summary = m.Summary,
       Note = m.Note,
+      ExePath = exe,
+      ExeSha256Hex = sha,
+      ExeResolvedFullPath = resolvedFull,
+      ExeFilePresent = present,
+      ExeActualSha256Hex = actualSha,
       FilePath = file,
     };
+  }
 
   private static TypeDecl ToType(
     ReTopLevel.TypeDef td,

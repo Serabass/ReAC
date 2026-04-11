@@ -37,7 +37,13 @@ internal sealed record FlagBitVm(int Bit, string Name, string? Description);
 
 internal sealed record EnumValVm(ulong Value, string Name, string? Description);
 
-internal sealed record TableRow4Vm(string C1, string NamePlain, string TypeHtml, string NoteHtml);
+internal sealed record TableRow4Vm(
+  string C1,
+  string NamePlain,
+  string TypeHtml,
+  string NoteHtml,
+  string SnapshotText = ""
+);
 
 internal sealed record TypeAncestorVm(
   string Name,
@@ -52,7 +58,8 @@ internal sealed record TableRow5Vm(
   string DeclaringType,
   string NamePlain,
   string TypeHtml,
-  string NoteHtml
+  string NoteHtml,
+  string SnapshotText = ""
 );
 
 internal sealed record NativeFnRowVm(
@@ -72,10 +79,17 @@ internal sealed record FlatRowVm(
   string NamePlain,
   string TypeHtml,
   string DeclaringPlain,
-  string LayoutText
+  string LayoutText,
+  string SnapshotText = ""
 );
 
-internal sealed record GroupStaticRowVm(string AddrPlain, string NamePlain, string TypeHtml, string NoteHtml);
+internal sealed record GroupStaticRowVm(
+  string AddrPlain,
+  string NamePlain,
+  string TypeHtml,
+  string NoteHtml,
+  string SnapshotText = ""
+);
 
 internal sealed record GroupedSectionVm(
   string TypeName,

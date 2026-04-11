@@ -23,6 +23,8 @@ public class HtmlExportSmokeTests
       Assert.True(File.Exists(index));
       var html = File.ReadAllText(index);
       Assert.Contains("CEntity", html, StringComparison.Ordinal);
+      Assert.Contains("exe-banner", html, StringComparison.Ordinal);
+      Assert.Contains("gta-vc.exe", html, StringComparison.OrdinalIgnoreCase);
 
       var cped = Path.Combine(outDir, "type", "CPed.html");
       Assert.True(File.Exists(cped));

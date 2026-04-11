@@ -39,6 +39,25 @@ public class ValidateAndLayoutTests
   }
 
   [Fact]
+  public void Core_Main_module_resolves_gta_vc_exe_metadata()
+  {
+    var root = TestPaths.RepoRoot();
+    var ir = ProjectLoader.Load(root);
+    var m = ir.Modules.First(x => x.Name == "Core.Main");
+    Assert.Equal("re/modules/gta-vc.exe", m.ExePath);
+    Assert.NotNull(m.ExeSha256Hex);
+    if (m.ExeFilePresent)
+    {
+      Assert.NotNull(m.ExeActualSha256Hex);
+      Assert.Equal(m.ExeSha256Hex, m.ExeActualSha256Hex);
+    }
+    else
+    {
+      Assert.Null(m.ExeActualSha256Hex);
+    }
+  }
+
+  [Fact]
   public void Validate_repo_kb_has_no_errors()
   {
     var root = TestPaths.RepoRoot();

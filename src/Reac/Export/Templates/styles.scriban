@@ -103,4 +103,8 @@ details.ancestor summary { cursor: pointer; font-weight: 600; }
   nav.sidebar { width: 100%; position: relative; max-height: none; border-right: none; border-bottom: 1px solid var(--reac-border-soft); }
   .theme-switcher { top: auto; bottom: 0.65rem; right: 0.65rem; }
 }
+.exe-banner { margin: 0 0 0.5rem; padding: 0.65rem 1rem; border: 1px solid var(--reac-border-soft); border-radius: 8px; background: var(--reac-bg-static); font-size: 0.88rem; max-width: 100%; box-sizing: border-box; }
+.exe-banner p { margin: 0.2rem 0; }
+.exe-banner .exe-warn { color: #a65a00; }
+[data-theme="dark"] .exe-banner .exe-warn { color: #f0b429; }
 </style>

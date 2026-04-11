@@ -14,9 +14,9 @@
 </tbody></table>
 {{ if a.HasStaticRows }}
 <p class="prov"><strong>Static</strong> (module address)</p>
-<table><thead><tr><th>Address</th><th>Name</th><th>Type</th><th>Note</th></tr></thead><tbody>
+<table><thead><tr><th>Address</th><th>Name</th><th>Type</th><th>Note</th><th>Value (exe)</th></tr></thead><tbody>
 {{ for row in a.StaticRows }}
-<tr><td>{{ row.C1 }}</td><td>{{ row.NamePlain | html.escape }}</td><td>{{ row.TypeHtml }}</td><td class="prov">{{ row.NoteHtml }}</td></tr>
+<tr><td>{{ row.C1 }}</td><td>{{ row.NamePlain | html.escape }}</td><td>{{ row.TypeHtml }}</td><td class="prov">{{ row.NoteHtml }}</td><td class="snapshot">{{ if row.SnapshotText != "" }}{{ row.SnapshotText | html.escape }}{{ else }}—{{ end }}</td></tr>
 {{ end }}
 </tbody></table>
 {{ end }}
@@ -31,10 +31,10 @@
 </tbody></table>
 {{ if ShowStaticHierarchy }}
 <h2 id="static-fields">Static fields</h2>
-<p class="prov">Absolute addresses in the module image (globals / singletons), not offsets inside an instance.</p>
-<table><thead><tr><th>Address</th><th>Declaring type</th><th>Name</th><th>Type</th><th>Note</th></tr></thead><tbody>
+<p class="prov">Absolute addresses in the module image (globals / singletons), not offsets inside an instance. <strong>Value (exe)</strong> is read from the configured game exe at export time (PE VA → section offset).</p>
+<table><thead><tr><th>Address</th><th>Declaring type</th><th>Name</th><th>Type</th><th>Note</th><th>Value (exe)</th></tr></thead><tbody>
 {{ for row in StaticHierarchyRows }}
-<tr><td>{{ row.Addr }}</td><td>{{ row.DeclaringType | html.escape }}</td><td>{{ row.NamePlain | html.escape }}</td><td>{{ row.TypeHtml }}</td><td class="prov">{{ row.NoteHtml }}</td></tr>
+<tr><td>{{ row.Addr }}</td><td>{{ row.DeclaringType | html.escape }}</td><td>{{ row.NamePlain | html.escape }}</td><td>{{ row.TypeHtml }}</td><td class="prov">{{ row.NoteHtml }}</td><td class="snapshot">{{ if row.SnapshotText != "" }}{{ row.SnapshotText | html.escape }}{{ else }}—{{ end }}</td></tr>
 {{ end }}
 </tbody></table>
 {{ end }}
@@ -54,20 +54,20 @@
 {{ end }}
 <h2>Flattened layout</h2>
 <p class="prov">Instance members by offset; static globals from the same inheritance chain are appended below.</p>
-<table><thead><tr><th>Off / address</th><th>Name</th><th>Type</th><th>Declaring</th><th>Layout</th></tr></thead><tbody>
+<table><thead><tr><th>Off / address</th><th>Name</th><th>Type</th><th>Declaring</th><th>Layout</th><th>Value (exe)</th></tr></thead><tbody>
 {{ for row in FlatRows }}
-<tr{{ if row.IsStaticRow }} class="static-field"{{ end }}><td>{{ row.Cell1Html }}</td><td>{{ row.NamePlain | html.escape }}</td><td>{{ row.TypeHtml }}</td><td>{{ row.DeclaringPlain | html.escape }}</td><td class="prov">{{ row.LayoutText | html.escape }}</td></tr>
+<tr{{ if row.IsStaticRow }} class="static-field"{{ end }}><td>{{ row.Cell1Html }}</td><td>{{ row.NamePlain | html.escape }}</td><td>{{ row.TypeHtml }}</td><td>{{ row.DeclaringPlain | html.escape }}</td><td class="prov">{{ row.LayoutText | html.escape }}</td><td class="snapshot">{{ if row.SnapshotText != "" }}{{ row.SnapshotText | html.escape }}{{ else }}—{{ end }}</td></tr>
 {{ end }}
 </tbody></table>
 <h2>Grouped by declaring type</h2>
 {{ for g in GroupedSections }}
 <h3>{{ g.TypeName | html.escape }}</h3>
-<table><thead><tr><th>Off</th><th>Name</th><th>Type</th><th>Note / bits</th></tr></thead><tbody>
+<table><thead><tr><th>Off / address</th><th>Name</th><th>Type</th><th>Note / bits</th><th>Value (exe)</th></tr></thead><tbody>
 {{ for row in g.InstanceRows }}
-<tr><td>{{ row.C1 }}</td><td>{{ row.NamePlain | html.escape }}</td><td>{{ row.TypeHtml }}</td><td class="prov">{{ row.NoteHtml }}</td></tr>
+<tr><td>{{ row.C1 }}</td><td>{{ row.NamePlain | html.escape }}</td><td>{{ row.TypeHtml }}</td><td class="prov">{{ row.NoteHtml }}</td><td>—</td></tr>
 {{ end }}
 {{ for row in g.StaticRows }}
-<tr><td class="prov">{{ row.AddrPlain | html.escape }}</td><td>{{ row.NamePlain | html.escape }}</td><td>{{ row.TypeHtml }}</td><td class="prov">{{ row.NoteHtml }}</td></tr>
+<tr><td class="prov">{{ row.AddrPlain | html.escape }}</td><td>{{ row.NamePlain | html.escape }}</td><td>{{ row.TypeHtml }}</td><td class="prov">{{ row.NoteHtml }}</td><td class="snapshot">{{ if row.SnapshotText != "" }}{{ row.SnapshotText | html.escape }}{{ else }}—{{ end }}</td></tr>
 {{ end }}
 </tbody></table>
 {{ end }}

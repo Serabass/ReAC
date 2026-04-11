@@ -91,4 +91,10 @@ public abstract record ReBodyLine
   ) : ReBodyLine;
 
   public sealed record NoteFunctionLine(string FunctionName, string Text) : ReBodyLine;
+
+  /// <summary>Module metadata: path to game exe (or fingerprint file), relative to project root or absolute.</summary>
+  public sealed record ExePathLine(string Path) : ReBodyLine;
+
+  /// <summary>Expected SHA-256 of the exe file (64 hex digits; optional 0x prefix; case-insensitive).</summary>
+  public sealed record Sha256ExpectedLine(string Hex) : ReBodyLine;
 }

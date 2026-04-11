@@ -457,6 +457,26 @@ public class ParseReTests
   }
 
   [Fact]
+  public void Parse_module_exe_and_sha256()
+  {
+    const string src = """
+      module M {
+        @exe("re/modules/a.exe")
+        @sha256("aeb2f22fe76209064ee5288da1892d0583cb17ed4fddad4bb624381ef3dc2346")
+      }
+      """;
+    var doc = ReDocumentParser.ParseDocument(src);
+    var m = Assert.IsType<ReTopLevel.Module>(Assert.Single(doc));
+    var ex = Assert.Single(m.Body.OfType<ReBodyLine.ExePathLine>());
+    var sh = Assert.Single(m.Body.OfType<ReBodyLine.Sha256ExpectedLine>());
+    Assert.Equal("re/modules/a.exe", ex.Path);
+    Assert.Equal(
+      "aeb2f22fe76209064ee5288da1892d0583cb17ed4fddad4bb624381ef3dc2346",
+      sh.Hex
+    );
+  }
+
+  [Fact]
   public void Parse_bitfield_top_level_bit_descriptions()
   {
     const string src = """

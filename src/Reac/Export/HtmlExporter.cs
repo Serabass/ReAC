@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Linq;
 using System.Text;
 using Reac.Dsl;
 using Reac.Ir;
@@ -14,13 +15,16 @@ public static class HtmlExporter
     var layouts = LayoutEngine.BuildLayouts(project, pointerSizeBytes);
     var typeMap = project.Types.ToDictionary(t => t.Name, StringComparer.Ordinal);
     var styles = HtmlTemplates.RenderCommonStyles();
+    var exeBanner = ExeBannerHtml.Build(project);
+    var staticSnapshots = LoadStaticSnapshots(project, pointerSizeBytes);
 
     var indexHtml = HtmlTemplates.RenderLayout(
       "REaC — Knowledge base",
       styles,
       BuildSidebarNav(project, "", null, null),
       HtmlTemplates.RenderIndexMain(),
-      liveReload
+      liveReload,
+      exeBanner
     );
     File.WriteAllText(Path.Combine(outDir, "index.html"), indexHtml, Encoding.UTF8);
 
@@ -40,7 +44,9 @@ public static class HtmlExporter
         typeMap,
         BuildSidebarNav(project, "../", "type", t.Name),
         styles,
-        liveReload
+        liveReload,
+        staticSnapshots,
+        exeBanner
       );
       File.WriteAllText(Path.Combine(typeDir, EscapeFile(t.Name) + ".html"), html, Encoding.UTF8);
     }
@@ -54,7 +60,8 @@ public static class HtmlExporter
         project,
         BuildSidebarNav(project, "../", "doc", d.Id),
         styles,
-        liveReload
+        liveReload,
+        exeBanner
       );
       File.WriteAllText(Path.Combine(docDir, EscapeFile(d.Id) + ".html"), html, Encoding.UTF8);
     }
@@ -67,7 +74,8 @@ public static class HtmlExporter
         b,
         BuildSidebarNav(project, "../", "bitfield", b.Name),
         styles,
-        liveReload
+        liveReload,
+        exeBanner
       );
       File.WriteAllText(
         Path.Combine(bitfieldDir, EscapeFile(b.Name) + ".html"),
@@ -84,7 +92,8 @@ public static class HtmlExporter
         e,
         BuildSidebarNav(project, "../", "enum", e.Name),
         styles,
-        liveReload
+        liveReload,
+        exeBanner
       );
       File.WriteAllText(Path.Combine(enumDir, EscapeFile(e.Name) + ".html"), html, Encoding.UTF8);
     }
@@ -102,6 +111,25 @@ public static class HtmlExporter
 
   private static string EscapeFile(string name) =>
     name.Replace('<', '_').Replace('>', '_').Replace(':', '_').Replace('*', '_');
+
+  private static IReadOnlyDictionary<string, string> LoadStaticSnapshots(
+    ProjectIr project,
+    int pointerSize
+  )
+  {
+    var mod = project.Modules.FirstOrDefault(m => m.ExePath != null && m.ExeFilePresent);
+    if (mod?.ExeResolvedFullPath is null || !File.Exists(mod.ExeResolvedFullPath))
+      return new Dictionary<string, string>(StringComparer.Ordinal);
+    var bytes = File.ReadAllBytes(mod.ExeResolvedFullPath);
+    return StaticFieldSnapshotReader.BuildSnapshotByFieldKey(bytes, project, pointerSize);
+  }
+
+  private static string Snap(
+    IReadOnlyDictionary<string, string> map,
+    string declaringType,
+    string fieldName
+  ) =>
+    map.TryGetValue(StaticFieldSnapshotReader.FieldKey(declaringType, fieldName), out var v) ? v : "";
 
   private static string BuildSidebarNav(
     ProjectIr project,
@@ -309,19 +337,29 @@ public static class HtmlExporter
     IReadOnlyDictionary<string, TypeDecl> typeMap,
     string sidebarNavHtml,
     string styles,
-    bool liveReload
+    bool liveReload,
+    IReadOnlyDictionary<string, string> staticSnapshots,
+    string exeBannerHtml
   )
   {
-    var vm = BuildTypePageMainVm(t, layout, unresolved, typeMap);
+    var vm = BuildTypePageMainVm(t, layout, unresolved, typeMap, staticSnapshots);
     var main = HtmlTemplates.RenderTypeMain(vm);
-    return HtmlTemplates.RenderLayout(t.Name + " — REaC", styles, sidebarNavHtml, main, liveReload);
+    return HtmlTemplates.RenderLayout(
+      t.Name + " — REaC",
+      styles,
+      sidebarNavHtml,
+      main,
+      liveReload,
+      exeBannerHtml
+    );
   }
 
   private static TypePageMainVm BuildTypePageMainVm(
     TypeDecl t,
     TypeLayout layout,
     IReadOnlyList<string> unresolved,
-    IReadOnlyDictionary<string, TypeDecl> typeMap
+    IReadOnlyDictionary<string, TypeDecl> typeMap,
+    IReadOnlyDictionary<string, string> staticSnapshots
   )
   {
     var chain = layout.InheritanceChain;
@@ -355,7 +393,8 @@ public static class HtmlExporter
               $"0x{addr:X}",
               f.Name,
               FieldTypeHtml(f.Type, f.BitfieldTypeName, f.EnumTypeName, depth: 1),
-              FieldNoteHtml(f.Note, f.FlagBits, f.EnumValues)
+              FieldNoteHtml(f.Note, f.FlagBits, f.EnumValues),
+              Snap(staticSnapshots, ancName, f.Name)
             )
           );
         }
@@ -407,7 +446,8 @@ public static class HtmlExporter
               typeName,
               f.Name,
               FieldTypeHtml(f.Type, f.BitfieldTypeName, f.EnumTypeName, depth: 1),
-              FieldNoteHtml(f.Note, f.FlagBits, f.EnumValues)
+              FieldNoteHtml(f.Note, f.FlagBits, f.EnumValues),
+              Snap(staticSnapshots, typeName, f.Name)
             )
           );
         }
@@ -475,7 +515,8 @@ public static class HtmlExporter
             sf.Name,
             FieldTypeHtml(sf.Type, sf.BitfieldTypeName, sf.EnumTypeName, depth: 1),
             typeName,
-            "module global"
+            "module global",
+            Snap(staticSnapshots, typeName, sf.Name)
           )
         );
       }
@@ -508,7 +549,8 @@ public static class HtmlExporter
               $"static 0x{addr:X}",
               sf.Name,
               FieldTypeHtml(sf.Type, sf.BitfieldTypeName, sf.EnumTypeName, depth: 1),
-              FieldNoteHtml(sf.Note, sf.FlagBits, sf.EnumValues)
+              FieldNoteHtml(sf.Note, sf.FlagBits, sf.EnumValues),
+              Snap(staticSnapshots, g.Key, sf.Name)
             )
           );
         }
@@ -603,23 +645,44 @@ public static class HtmlExporter
     BitfieldTypeDecl b,
     string sidebarNavHtml,
     string styles,
-    bool liveReload
+    bool liveReload,
+    string exeBannerHtml
   )
   {
     var main = HtmlTemplates.RenderBitfieldMain(
       b,
       HtmlTemplates.RenderProvenance(b.FilePath, b.SourceUrls)
     );
-    return HtmlTemplates.RenderLayout(b.Name + " — REaC", styles, sidebarNavHtml, main, liveReload);
+    return HtmlTemplates.RenderLayout(
+      b.Name + " — REaC",
+      styles,
+      sidebarNavHtml,
+      main,
+      liveReload,
+      exeBannerHtml
+    );
   }
 
-  private static string RenderEnumPage(EnumTypeDecl e, string sidebarNavHtml, string styles, bool liveReload)
+  private static string RenderEnumPage(
+    EnumTypeDecl e,
+    string sidebarNavHtml,
+    string styles,
+    bool liveReload,
+    string exeBannerHtml
+  )
   {
     var main = HtmlTemplates.RenderEnumMain(
       e,
       HtmlTemplates.RenderProvenance(e.FilePath, e.SourceUrls)
     );
-    return HtmlTemplates.RenderLayout(e.Name + " — REaC", styles, sidebarNavHtml, main, liveReload);
+    return HtmlTemplates.RenderLayout(
+      e.Name + " — REaC",
+      styles,
+      sidebarNavHtml,
+      main,
+      liveReload,
+      exeBannerHtml
+    );
   }
 
   private static string RenderDocPage(
@@ -627,7 +690,8 @@ public static class HtmlExporter
     ProjectIr project,
     string sidebarNavHtml,
     string styles,
-    bool liveReload
+    bool liveReload,
+    string exeBannerHtml
   )
   {
     var typeNames = project.Types.Select(t => t.Name).ToHashSet(StringComparer.Ordinal);
@@ -650,6 +714,13 @@ public static class HtmlExporter
 
     var sections = d.Sections.Select(s => new DocSectionRow(s.Name, s.Text)).ToList();
     var main = HtmlTemplates.RenderDocMain(d, refs, sections);
-    return HtmlTemplates.RenderLayout(d.Title + " — REaC", styles, sidebarNavHtml, main, liveReload);
+    return HtmlTemplates.RenderLayout(
+      d.Title + " — REaC",
+      styles,
+      sidebarNavHtml,
+      main,
+      liveReload,
+      exeBannerHtml
+    );
   }
 }

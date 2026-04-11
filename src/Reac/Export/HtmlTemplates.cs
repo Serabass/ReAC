@@ -125,7 +125,8 @@ internal static class HtmlTemplates
     string stylesBlock,
     string sidebarHtml,
     string mainHtml,
-    bool liveReload = false
+    bool liveReload = false,
+    string exeBannerHtml = ""
   )
   {
     var t = Load("layout.scriban");
@@ -137,6 +138,7 @@ internal static class HtmlTemplates
       ["sidebar"] = sidebarHtml,
       ["main"] = mainHtml,
       ["live_reload"] = liveReload,
+      ["exe_banner"] = exeBannerHtml,
     };
     ctx.PushGlobal(globals);
     return t.Render(ctx);
