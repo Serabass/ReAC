@@ -8,9 +8,9 @@ class CVehicle : CPhysical size 0x00C {
   0x29C vehicleType         : eVehicleType
 }
 
+@source("https://gtamods.com/wiki/Memory_Addresses_(VC)#CVehicle")
+@summary("Vehicle Type")
 enum eVehicleType : dword {
-  @source("https://gtamods.com/wiki/Memory_Addresses_(VC)#CVehicle")
-  @summary("Vehicle Type")
   0x000 general
   0x001 boat
   0x002 train
@@ -19,9 +19,9 @@ enum eVehicleType : dword {
   0x005 bike
 }
 
+@source("https://gtamods.com/wiki/Memory_Addresses_(VC)#CVehicle")
+@summary("Radio Station")
 enum eRadioStation : byte {
-  @source("https://gtamods.com/wiki/Memory_Addresses_(VC)#CVehicle")
-  @summary("Radio Station")
   0x000 wildStyle
   0x001 flashFm
   0x002 kChat

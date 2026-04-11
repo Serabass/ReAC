@@ -14,7 +14,7 @@ class CStats {
   static 0x009B5F8C cheatedCount : uint32
   static 0x0097F1F4 daysPassed : uint32
   static 0x00A0FC94 sprayings : uint32
-  0x004CE3FB Init() : int
+  static 0x004CE3FB Init() : int
 }
 
 @source("https://gtamods.com/wiki/List_of_statistics_(VC)")
