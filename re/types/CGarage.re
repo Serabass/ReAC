@@ -57,6 +57,9 @@ class CGarage {
   static 0x7D7B48 vercettiEstate3 : CGarage*
   static 0x7D7B70 vercettiEstate4 : CGarage*
 
+  0x0042E900 Close() : uint8
+  0x0042E910 Open() : uint8
+
   0x000 ideModel : dword
   0x004 pos : CVector
   0x010 angle : CVector

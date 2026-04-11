@@ -1,6 +1,9 @@
 class CStats {
   module Core.Main
   source "https://gtamods.com/wiki/List_of_statistics_(VC)"
+  source "https://gtamods.com/wiki/Function_Memory_Addresses_(VC)#CStats"
+
+  static 004CE3FB Init(): int
 
   static 0x978794 peopleKilledByPlayer    : uint32
   static 0x9753AC peopleKilledByOthers    : uint32
