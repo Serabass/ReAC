@@ -18,6 +18,6 @@ class CStats {
 class HiddenPackagesStat {
   module Core.Main
   source "https://gtamods.com/wiki/List_of_statistics_(VC)"
-  0x000 found : uint32 "0x94ADD0"
-  0x004 total : uint32 "0x94ADD4"
+  0x000 found : uint32 "hidden packages found"
+  0x004 total : uint32 "total number of packages"
 }
