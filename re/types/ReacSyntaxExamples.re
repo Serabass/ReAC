@@ -11,6 +11,7 @@ class ReacSyntaxExamples {
     0x000 bOne "description in quotes on a bit line"
     0x001 bTwo
   }
+
   @stdcall
   @nothrow
   0x01000000 ExampleDecoratedNative() : void
