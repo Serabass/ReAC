@@ -1,9 +1,7 @@
 class CObject : CPhysical {
   module Core.Main
   source "https://gtamods.com/wiki/Memory_Addresses_(VC)#CObject"
-
   note "Layout follows GTAMods Memory_Addresses_(VC) CObject; matDummyInitial is 72 B in that game."
-
   0x120 matDummyInitial           : byte[72]
   0x168 fAttachForce              : float
   0x16C byteObjectType            : byte
@@ -27,21 +25,19 @@ class CObject : CPhysical {
 bitfield CObjectFlags1 : byte {
   source "https://gtamods.com/wiki/Memory_Addresses_(VC)#CObject"
   summary "First object flags byte (VC); names from GTAMods wiki."
-
-  0 bIsPickupObject
-  1 bDoCircleEffect
-  2 bRenderPickupQuantity
-  3 bRenderPickupAvailability
-  4 bWindowMinorCollisionDamage
-  5 bHasWindowBeenBrokenByMelee
-  6 bHasObjectExplosionTriggered
-  7 bIsVehicleComponent
+  0x000 bIsPickupObject
+  0x001 bDoCircleEffect
+  0x002 bRenderPickupQuantity
+  0x003 bRenderPickupAvailability
+  0x004 bWindowMinorCollisionDamage
+  0x005 bHasWindowBeenBrokenByMelee
+  0x006 bHasObjectExplosionTriggered
+  0x007 bIsVehicleComponent
 }
 
 bitfield CObjectFlags2 : byte {
   source "https://gtamods.com/wiki/Memory_Addresses_(VC)#CObject"
   summary "Second object flags byte (VC); names from GTAMods wiki."
-
-  0 bSpecialLighting
-  1 bNoVehicleCollisionWhenDetached
+  0x000 bSpecialLighting
+  0x001 bNoVehicleCollisionWhenDetached
 }

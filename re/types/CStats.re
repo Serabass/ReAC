@@ -2,25 +2,22 @@ class CStats {
   module Core.Main
   source "https://gtamods.com/wiki/List_of_statistics_(VC)"
   source "https://gtamods.com/wiki/Function_Memory_Addresses_(VC)#CStats"
-
-  static 0x004CE3FB Init(): int
-
-  static 0x978794 peopleKilledByPlayer    : uint32
-  static 0x9753AC peopleKilledByOthers    : uint32
-  static 0xA0D224 missionsPassed          : uint32
-  static 0xA0D388 carsExploded            : uint32
-  static 0x974B04 boatsExploded           : uint32
-  static 0x94DB58 tyresPopped             : uint32
-  static 0x9751F0 helisDestroyed          : uint32
-  static 0x97F1F4 daysPassed              : uint32
-  static 0x94ADD0 hiddenPackages          : HiddenPackagesStat
-  static 0x9B5F8C cheatedCount            : uint32
+  0x004CE3FB Init() : int
+  static 0x00978794 peopleKilledByPlayer : uint32
+  static 0x009753AC peopleKilledByOthers : uint32
+  static 0x00A0D224 missionsPassed : uint32
+  static 0x00A0D388 carsExploded : uint32
+  static 0x00974B04 boatsExploded : uint32
+  static 0x0094DB58 tyresPopped : uint32
+  static 0x009751F0 helisDestroyed : uint32
+  static 0x0097F1F4 daysPassed : uint32
+  static 0x0094ADD0 hiddenPackages : HiddenPackagesStat
+  static 0x009B5F8C cheatedCount : uint32
 }
 
 class HiddenPackagesStat {
   module Core.Main
   source "https://gtamods.com/wiki/List_of_statistics_(VC)"
-
-  0x00 found : uint32 // 0x94ADD0
-  0x04 total : uint32 // 0x94ADD4
+  0x000 found : uint32 "0x94ADD0"
+  0x004 total : uint32 "0x94ADD4"
 }

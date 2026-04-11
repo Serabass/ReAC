@@ -1,0 +1,12 @@
+[indent]
+style = "space"
+width = 2
+
+[hex]
+digits_case = "upper"
+pad_offsets = 3
+pad_sizes = 3
+pad_addresses = 8
+
+[fields]
+align_types = true
