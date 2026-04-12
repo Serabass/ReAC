@@ -149,12 +149,17 @@ public sealed class TargetDecl
 
 public sealed class DocumentDecl
 {
+  /// <summary>Primary source file: <see cref="ProjectConfig.DocsEntryPath"/> when set, otherwise the parsed <c>.rdoc</c> path.</summary>
+  public required string FilePath { get; init; }
+
+  /// <summary>Full paths of files pulled in via <c>#include</c>, in expansion order (empty when no includes).</summary>
+  public IReadOnlyList<string> IncludedSourcePaths { get; init; } = Array.Empty<string>();
+
   public required string Id { get; init; }
   public required string Title { get; init; }
   public string? Summary { get; init; }
   public required IReadOnlyList<string> References { get; init; }
   public required IReadOnlyList<DocSection> Sections { get; init; }
-  public required string FilePath { get; init; }
 }
 
 public sealed class DocSection
@@ -184,6 +189,10 @@ public sealed class ProjectConfig
   public required string ModulesDir { get; init; }
   public required string TypesDir { get; init; }
   public required string DocsDir { get; init; }
+
+  /// <summary>Optional path to the single documentation entry <c>.rdoc</c> (relative to project root). When set, only this file is loaded (after <c>#include</c> expansion); otherwise all <c>*.rdoc</c> under <see cref="DocsDir"/> are separate documents.</summary>
+  public string? DocsEntryPath { get; init; }
+
   public required string GeneratedDir { get; init; }
 
   /// <summary>Predefined preprocessor names (for <c>#ifdef</c>); values used only for macro expansion.</summary>

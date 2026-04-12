@@ -21,6 +21,7 @@ public static class ProjectMeta
     var modulesDir = "modules";
     var typesDir = "types";
     var docsDir = "docs";
+    string? docsEntryPath = null;
     var generatedDir = "generated";
     if (root.TryGetValue("paths", out var pObj) && pObj is TomlTable paths)
     {
@@ -32,6 +33,8 @@ public static class ProjectMeta
         typesDir = tyd?.ToString() ?? typesDir;
       if (paths.TryGetValue("docs_dir", out var dd))
         docsDir = dd?.ToString() ?? docsDir;
+      if (paths.TryGetValue("docs_entry", out var de))
+        docsEntryPath = string.IsNullOrWhiteSpace(de?.ToString()) ? null : de!.ToString();
       if (paths.TryGetValue("generated_dir", out var gd))
         generatedDir = gd?.ToString() ?? generatedDir;
     }
@@ -60,6 +63,7 @@ public static class ProjectMeta
       ModulesDir = modulesDir,
       TypesDir = typesDir,
       DocsDir = docsDir,
+      DocsEntryPath = docsEntryPath,
       GeneratedDir = generatedDir,
       PredefinedMacros = predefined,
     };

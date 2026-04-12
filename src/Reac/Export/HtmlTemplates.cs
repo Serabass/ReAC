@@ -232,10 +232,27 @@ internal static class HtmlTemplates
     return t.Render(ctx);
   }
 
+  public static string RenderDocProvenance(DocumentDecl d)
+  {
+    var t = Load("doc_provenance.scriban");
+    var ctx = new TemplateContext();
+    PushModelGlobalsDeep(
+      ctx,
+      new
+      {
+        entryPath = d.FilePath,
+        hasIncludes = d.IncludedSourcePaths.Count > 0,
+        includedPaths = d.IncludedSourcePaths.ToList(),
+      }
+    );
+    return t.Render(ctx);
+  }
+
   public static string RenderDocMain(
     DocumentDecl d,
     IReadOnlyList<DocRefRow> references,
-    IReadOnlyList<DocSectionRow> sections
+    IReadOnlyList<DocSectionRow> sections,
+    string docProvenanceHtml
   )
   {
     var t = Load("doc_page.scriban");
@@ -246,6 +263,7 @@ internal static class HtmlTemplates
       {
         title = d.Title,
         summary = d.Summary ?? "",
+        provenance = docProvenanceHtml,
         references,
         sections,
       }

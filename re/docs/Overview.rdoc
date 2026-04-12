@@ -8,4 +8,5 @@ document Overview {
   section Intro {
     text "Author types in .re, validate layout, export HTML. No specific game or importer is required."
   }
+  #include "parts/Sample_Memory_Model.rdoc"
 }

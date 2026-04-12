@@ -4,7 +4,11 @@ namespace Reac.Dsl;
 
 public static class RdocDocumentParser
 {
-  public static DocumentDecl ParseDocument(string text, string filePath)
+  public static DocumentDecl ParseDocument(
+    string text,
+    string filePath,
+    IReadOnlyList<string>? includedSourcePaths = null
+  )
   {
     var i = 0;
     StringLiterals.SkipNoise(text, ref i);
@@ -75,6 +79,7 @@ public static class RdocDocumentParser
       References = refs,
       Sections = sections,
       FilePath = filePath,
+      IncludedSourcePaths = includedSourcePaths ?? Array.Empty<string>(),
     };
   }
 

@@ -1,0 +1,12 @@
+<h2>Source</h2>
+<div class="prov">
+<div>Entry: <code>{{ entryPath | html.escape }}</code></div>
+{{ if hasIncludes }}
+<div>Included:</div>
+<ul class="prov">
+{{ for p in includedPaths }}
+<li><code>{{ p | html.escape }}</code></li>
+{{ end }}
+</ul>
+{{ end }}
+</div>

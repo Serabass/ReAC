@@ -1,5 +1,3 @@
-document Sample_Memory_Model {
-  title "Sample memory model (illustrative)"
   references {
     ref CEntity
     ref CPhysical
@@ -12,7 +10,9 @@ document Sample_Memory_Model {
     ref CObjectFlags2
     ref eWeaponType
   }
-  summary "Example .re types showing inheritance, field offsets, optional native function entry points, and bitfield and enum annotations. Replace sources and names with your binary's provenance."
+  section Memory_model {
+    text "Example .re types showing inheritance, field offsets, optional native function entry points, and bitfield and enum annotations. Replace sources and names with your binary's provenance."
+  }
   section Inheritance {
     text "Example chain: CPed extends CPhysical; CPhysical extends CEntity; CObject extends CPhysical — illustrative only."
   }
@@ -28,4 +28,3 @@ document Sample_Memory_Model {
   section Enums {
     text "Top-level enum Name : StorageScalar { N EnumeratorName optional-quoted-description; ... }. Values are unsigned and must fit the storage width. Use the enum name as a field type (layout uses the underlying scalar). Example: eWeaponType on CWeapon.weaponType."
   }
-}

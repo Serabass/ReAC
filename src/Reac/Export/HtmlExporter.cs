@@ -713,7 +713,8 @@ public static class HtmlExporter
     }
 
     var sections = d.Sections.Select(s => new DocSectionRow(s.Name, s.Text)).ToList();
-    var main = HtmlTemplates.RenderDocMain(d, refs, sections);
+    var docProv = HtmlTemplates.RenderDocProvenance(d);
+    var main = HtmlTemplates.RenderDocMain(d, refs, sections, docProv);
     return HtmlTemplates.RenderLayout(
       d.Title + " — REaC",
       styles,

@@ -137,17 +137,27 @@ public static class ProjectLoader
     }
 
     var documents = new List<DocumentDecl>();
-    foreach (
-      var f in Directory.Exists(docsDir)
-        ? Directory
+    if (!string.IsNullOrWhiteSpace(cfg.DocsEntryPath))
+    {
+      var entry = Path.Combine(projectRoot, cfg.DocsEntryPath.Replace('/', Path.DirectorySeparatorChar));
+      entry = Path.GetFullPath(entry);
+      if (!File.Exists(entry))
+        throw new FileNotFoundException("docs_entry not found", entry);
+      var (expanded, included) = RdocIncludeExpander.Expand(entry);
+      documents.Add(RdocDocumentParser.ParseDocument(expanded, entry, included));
+    }
+    else if (Directory.Exists(docsDir))
+    {
+      foreach (
+        var f in Directory
           .EnumerateFiles(docsDir, "*.rdoc")
           .OrderBy(x => x, StringComparer.OrdinalIgnoreCase)
           .ToArray()
-        : Array.Empty<string>()
-    )
-    {
-      var text = File.ReadAllText(f);
-      documents.Add(RdocDocumentParser.ParseDocument(text, f));
+      )
+      {
+        var text = File.ReadAllText(f);
+        documents.Add(RdocDocumentParser.ParseDocument(text, f));
+      }
     }
 
     var pointerSize = pointerSizeForBitfields;

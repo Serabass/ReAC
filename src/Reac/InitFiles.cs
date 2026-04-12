@@ -12,6 +12,8 @@ targets_dir = "targets"
 modules_dir = "modules"
 types_dir = "types"
 docs_dir = "docs"
+# Single .rdoc entry; body may use #include "relative.rdoc" (fragments only, not a nested document block).
+docs_entry = "docs/Overview.rdoc"
 generated_dir = "generated"
 """;
 
@@ -31,7 +33,7 @@ generated_dir = "generated"
     ("types/CObject.re", CObject),
     ("types/CPed.re", CPed),
     ("docs/Overview.rdoc", OverviewRdoc),
-    ("docs/Sample_Memory_Model.rdoc", MemoryModelRdoc),
+    ("docs/parts/Sample_Memory_Model.rdoc", MemoryModelFragmentRdoc),
   ];
 
   private const string TargetRe = """
@@ -256,16 +258,16 @@ document Overview {
   section Intro {
     text "Author types in .re, validate layout, export HTML. No specific game or importer is required."
   }
+  #include "parts/Sample_Memory_Model.rdoc"
 }
 """;
 
-  private const string MemoryModelRdoc = """
-document Sample_Memory_Model {
-  title "Sample memory model (illustrative)"
+  private const string MemoryModelFragmentRdoc = """
   references {
     ref CEntity
     ref CPhysical
     ref CPed
+    ref CPlayer
     ref CVector
     ref CMatrix
     ref CObject
@@ -273,7 +275,9 @@ document Sample_Memory_Model {
     ref CObjectFlags2
     ref eWeaponType
   }
-  summary "Example .re types showing inheritance, field offsets, optional native function entry points, and bitfield annotations. Replace sources and names with your binary's provenance."
+  section Memory_model {
+    text "Example .re types showing inheritance, field offsets, optional native function entry points, and bitfield annotations. Replace sources and names with your binary's provenance."
+  }
   section Inheritance {
     text "Example chain: CPed extends CPhysical; CPhysical extends CEntity; CObject extends CPhysical — illustrative only."
   }
@@ -289,6 +293,5 @@ document Sample_Memory_Model {
   section Function_entry_points {
     text "When you document exports or addresses, list them as fn entries on the relevant type. Cross-link external write-ups in source lines or notes."
   }
-}
 """;
 }
