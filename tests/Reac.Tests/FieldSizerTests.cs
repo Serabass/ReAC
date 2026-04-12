@@ -36,3 +36,4 @@ public class FieldSizerTests
     Assert.Null(FieldSizer.MaxBitIndexForScalarStorage("not_a_type", 4));
   }
 }
+

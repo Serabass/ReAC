@@ -66,7 +66,12 @@ public static class ReDocumentFormatter
     }
   }
 
-  private static void AppendTarget(StringBuilder sb, ReTopLevel.Target t, FormatOptions o, int level)
+  private static void AppendTarget(
+    StringBuilder sb,
+    ReTopLevel.Target t,
+    FormatOptions o,
+    int level
+  )
   {
     var ind = o.Indent(level);
     var ind1 = o.Indent(level + 1);
@@ -80,13 +85,21 @@ public static class ReDocumentFormatter
     if (t.Version != null)
       sb.Append(ind1).Append("version ").Append(ReQuotedString.DoubleQuote(t.Version)).Append('\n');
     if (t.Platform != null)
-      sb.Append(ind1).Append("platform ").Append(ReQuotedString.DoubleQuote(t.Platform)).Append('\n');
+      sb.Append(ind1)
+        .Append("platform ")
+        .Append(ReQuotedString.DoubleQuote(t.Platform))
+        .Append('\n');
     foreach (var url in t.SourceUrls)
       sb.Append(ind1).Append("source ").Append(ReQuotedString.DoubleQuote(url)).Append('\n');
     sb.Append(ind).Append("}\n");
   }
 
-  private static void AppendModule(StringBuilder sb, ReTopLevel.Module m, FormatOptions o, int level)
+  private static void AppendModule(
+    StringBuilder sb,
+    ReTopLevel.Module m,
+    FormatOptions o,
+    int level
+  )
   {
     var ind = o.Indent(level);
     var ind1 = o.Indent(level + 1);
@@ -105,7 +118,8 @@ public static class ReDocumentFormatter
     foreach (var l in body)
     {
       if (
-        l is ReBodyLine.SourceLine
+        l
+        is ReBodyLine.SourceLine
           or ReBodyLine.SummaryLine
           or ReBodyLine.NoteEntityLine
           or ReBodyLine.ExePathLine
@@ -127,7 +141,10 @@ public static class ReDocumentFormatter
         sb.Append(ind).Append("@source(").Append(ReQuotedString.DoubleQuote(sl.Url)).Append(")\n");
         break;
       case ReBodyLine.SummaryLine sm:
-        sb.Append(ind).Append("@summary(").Append(ReQuotedString.DoubleQuote(sm.Text)).Append(")\n");
+        sb.Append(ind)
+          .Append("@summary(")
+          .Append(ReQuotedString.DoubleQuote(sm.Text))
+          .Append(")\n");
         break;
       case ReBodyLine.NoteEntityLine ne:
         sb.Append(ind).Append("@note(").Append(ReQuotedString.DoubleQuote(ne.Text)).Append(")\n");
@@ -143,7 +160,12 @@ public static class ReDocumentFormatter
     }
   }
 
-  private static void AppendTypeDef(StringBuilder sb, ReTopLevel.TypeDef td, FormatOptions o, int level)
+  private static void AppendTypeDef(
+    StringBuilder sb,
+    ReTopLevel.TypeDef td,
+    FormatOptions o,
+    int level
+  )
   {
     var ind = o.Indent(level);
     var (prefix, innerBody) = SplitLeadingTypeMetadata(td.Body);
@@ -164,10 +186,20 @@ public static class ReDocumentFormatter
     sb.Append(ind).Append("}\n");
   }
 
-  private static void AppendBitfieldDef(StringBuilder sb, ReTopLevel.BitfieldDef bf, FormatOptions o, int level)
+  private static void AppendBitfieldDef(
+    StringBuilder sb,
+    ReTopLevel.BitfieldDef bf,
+    FormatOptions o,
+    int level
+  )
   {
     var ind = o.Indent(level);
-    sb.Append(ind).Append("bitfield ").Append(bf.Name).Append(" : ").Append(bf.StorageName).Append(" {\n");
+    sb.Append(ind)
+      .Append("bitfield ")
+      .Append(bf.Name)
+      .Append(" : ")
+      .Append(bf.StorageName)
+      .Append(" {\n");
     AppendBitfieldEnumInner(
       sb,
       bf.Bits.Select(b => ((ulong)b.Bit, b.Name, b.Description)),
@@ -181,10 +213,20 @@ public static class ReDocumentFormatter
     sb.Append(ind).Append("}\n");
   }
 
-  private static void AppendEnumDef(StringBuilder sb, ReTopLevel.EnumDef ed, FormatOptions o, int level)
+  private static void AppendEnumDef(
+    StringBuilder sb,
+    ReTopLevel.EnumDef ed,
+    FormatOptions o,
+    int level
+  )
   {
     var ind = o.Indent(level);
-    sb.Append(ind).Append("enum ").Append(ed.Name).Append(" : ").Append(ed.StorageName).Append(" {\n");
+    sb.Append(ind)
+      .Append("enum ")
+      .Append(ed.Name)
+      .Append(" : ")
+      .Append(ed.StorageName)
+      .Append(" {\n");
     AppendBitfieldEnumInner(
       sb,
       ed.Values,
@@ -255,9 +297,7 @@ public static class ReDocumentFormatter
         (a, b) =>
         {
           var c = a.Value.CompareTo(b.Value);
-          return c != 0
-            ? c
-            : string.Compare(a.Name, b.Name, StringComparison.OrdinalIgnoreCase);
+          return c != 0 ? c : string.Compare(a.Name, b.Name, StringComparison.OrdinalIgnoreCase);
         }
       );
     }
@@ -283,7 +323,9 @@ public static class ReDocumentFormatter
       return body.ToList();
 
     var header = new List<ReBodyLine>();
-    var notesByField = new Dictionary<string, List<ReBodyLine.NoteFieldLine>>(StringComparer.OrdinalIgnoreCase);
+    var notesByField = new Dictionary<string, List<ReBodyLine.NoteFieldLine>>(
+      StringComparer.OrdinalIgnoreCase
+    );
     var fields = new List<ReBodyLine>();
     var statics = new List<ReBodyLine.StaticFieldLine>();
     var funcs = new List<ReBodyLine.FunctionLine>();
@@ -434,7 +476,12 @@ public static class ReDocumentFormatter
     return result;
   }
 
-  private static void AppendBodyLines(StringBuilder sb, IReadOnlyList<ReBodyLine> body, FormatOptions o, int level)
+  private static void AppendBodyLines(
+    StringBuilder sb,
+    IReadOnlyList<ReBodyLine> body,
+    FormatOptions o,
+    int level
+  )
   {
     var merged = MergeLegacyNoteFunctionLines(body);
     var ordered = ApplyBodySort(merged, o);
@@ -461,7 +508,10 @@ public static class ReDocumentFormatter
         sb.Append(ind).Append("@source(").Append(ReQuotedString.DoubleQuote(sl.Url)).Append(")\n");
         break;
       case ReBodyLine.SummaryLine sm:
-        sb.Append(ind).Append("@summary(").Append(ReQuotedString.DoubleQuote(sm.Text)).Append(")\n");
+        sb.Append(ind)
+          .Append("@summary(")
+          .Append(ReQuotedString.DoubleQuote(sm.Text))
+          .Append(")\n");
         break;
       case ReBodyLine.NoteEntityLine ne:
         sb.Append(ind).Append("@note(").Append(ReQuotedString.DoubleQuote(ne.Text)).Append(")\n");
@@ -561,3 +611,4 @@ public static class ReDocumentFormatter
     sb.Append('\n');
   }
 }
+

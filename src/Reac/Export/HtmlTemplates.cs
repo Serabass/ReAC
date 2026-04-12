@@ -14,7 +14,8 @@ internal static class HtmlTemplates
   /// <summary>Non-empty line segments split by CR/LF (for spoiler threshold).</summary>
   internal static int CountTextLines(string? s)
   {
-    if (string.IsNullOrEmpty(s)) return 0;
+    if (string.IsNullOrEmpty(s))
+      return 0;
     return s.Split(new[] { '\r', '\n' }, StringSplitOptions.None).Length;
   }
 
@@ -184,6 +185,17 @@ internal static class HtmlTemplates
     return t.Render(ctx);
   }
 
+  /// <summary>Bit/enum value lists under the type cell (not the Note column).</summary>
+  public static string RenderFieldTypeExtras(FieldNoteVm m)
+  {
+    if (!m.HasBits && !m.HasEnums)
+      return "";
+    var t = Load("field_type_extras.scriban");
+    var ctx = new TemplateContext();
+    PushModelGlobalsDeep(ctx, m);
+    return t.Render(ctx);
+  }
+
   public static string RenderProvenance(string filePath, IReadOnlyList<string> sourceUrls)
   {
     var urls = sourceUrls
@@ -305,3 +317,4 @@ internal static class HtmlTemplates
 
   private sealed record EnumRow(ulong value, string name, string description);
 }
+

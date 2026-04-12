@@ -9,7 +9,12 @@ namespace Reac.Export;
 
 public static class HtmlExporter
 {
-  public static void Export(ProjectIr project, string outDir, int pointerSizeBytes, bool liveReload = false)
+  public static void Export(
+    ProjectIr project,
+    string outDir,
+    int pointerSizeBytes,
+    bool liveReload = false
+  )
   {
     Directory.CreateDirectory(outDir);
     var layouts = LayoutEngine.BuildLayouts(project, pointerSizeBytes);
@@ -129,7 +134,9 @@ public static class HtmlExporter
     string declaringType,
     string fieldName
   ) =>
-    map.TryGetValue(StaticFieldSnapshotReader.FieldKey(declaringType, fieldName), out var v) ? v : "";
+    map.TryGetValue(StaticFieldSnapshotReader.FieldKey(declaringType, fieldName), out var v)
+      ? v
+      : "";
 
   private static string BuildSidebarNav(
     ProjectIr project,
@@ -378,8 +385,14 @@ public static class HtmlExporter
             new TableRow4Vm(
               $"0x{f.Offset:X}",
               f.Name,
-              FieldTypeHtml(f.Type, f.BitfieldTypeName, f.EnumTypeName, depth: 1),
-              FieldNoteHtml(f.Note, f.FlagBits, f.EnumValues)
+              FieldTypeCellHtml(
+                f.Type,
+                f.BitfieldTypeName,
+                f.EnumTypeName,
+                f.FlagBits,
+                f.EnumValues
+              ),
+              FieldPlainNoteHtml(f.Note)
             )
           );
         }
@@ -392,8 +405,14 @@ public static class HtmlExporter
             new TableRow4Vm(
               $"0x{addr:X}",
               f.Name,
-              FieldTypeHtml(f.Type, f.BitfieldTypeName, f.EnumTypeName, depth: 1),
-              FieldNoteHtml(f.Note, f.FlagBits, f.EnumValues),
+              FieldTypeCellHtml(
+                f.Type,
+                f.BitfieldTypeName,
+                f.EnumTypeName,
+                f.FlagBits,
+                f.EnumValues
+              ),
+              FieldPlainNoteHtml(f.Note),
               Snap(staticSnapshots, ancName, f.Name)
             )
           );
@@ -418,8 +437,8 @@ public static class HtmlExporter
         new TableRow4Vm(
           $"0x{f.Offset:X}",
           f.Name,
-          FieldTypeHtml(f.Type, f.BitfieldTypeName, f.EnumTypeName, depth: 1),
-          FieldNoteHtml(f.Note, f.FlagBits, f.EnumValues)
+          FieldTypeCellHtml(f.Type, f.BitfieldTypeName, f.EnumTypeName, f.FlagBits, f.EnumValues),
+          FieldPlainNoteHtml(f.Note)
         )
       );
     }
@@ -445,8 +464,14 @@ public static class HtmlExporter
               $"0x{addr:X}",
               typeName,
               f.Name,
-              FieldTypeHtml(f.Type, f.BitfieldTypeName, f.EnumTypeName, depth: 1),
-              FieldNoteHtml(f.Note, f.FlagBits, f.EnumValues),
+              FieldTypeCellHtml(
+                f.Type,
+                f.BitfieldTypeName,
+                f.EnumTypeName,
+                f.FlagBits,
+                f.EnumValues
+              ),
+              FieldPlainNoteHtml(f.Note),
               Snap(staticSnapshots, typeName, f.Name)
             )
           );
@@ -468,9 +493,8 @@ public static class HtmlExporter
         {
           var retPlain = string.IsNullOrEmpty(fn.ReturnType) ? "" : fn.ReturnType;
           var notePlain = string.IsNullOrEmpty(fn.Note) ? "" : fn.Note;
-          var decPlain = fn.Decorators.Count == 0
-            ? ""
-            : string.Join(" ", fn.Decorators.Select(d => "@" + d));
+          var decPlain =
+            fn.Decorators.Count == 0 ? "" : string.Join(" ", fn.Decorators.Select(d => "@" + d));
           return new NativeFnRowVm(
             $"0x{fn.Address:X}",
             fn.Name,
@@ -495,7 +519,13 @@ public static class HtmlExporter
           false,
           $"0x{ff.Offset:X}",
           ff.Name,
-          FieldTypeHtml(ff.Type, ff.BitfieldTypeName, ff.EnumTypeName, depth: 1),
+          FieldTypeCellHtml(
+            ff.Type,
+            ff.BitfieldTypeName,
+            ff.EnumTypeName,
+            ff.FlagBits,
+            ff.EnumValues
+          ),
           ff.DeclaringTypeName,
           ff.Indeterminate ? "indeterminate" : ""
         )
@@ -514,7 +544,13 @@ public static class HtmlExporter
             true,
             $"<code>static 0x{addr:X}</code>",
             sf.Name,
-            FieldTypeHtml(sf.Type, sf.BitfieldTypeName, sf.EnumTypeName, depth: 1),
+            FieldTypeCellHtml(
+              sf.Type,
+              sf.BitfieldTypeName,
+              sf.EnumTypeName,
+              sf.FlagBits,
+              sf.EnumValues
+            ),
             typeName,
             "module global",
             Snap(staticSnapshots, typeName, sf.Name)
@@ -533,8 +569,14 @@ public static class HtmlExporter
           new TableRow4Vm(
             $"0x{ff.Offset:X}",
             ff.Name,
-            FieldTypeHtml(ff.Type, ff.BitfieldTypeName, ff.EnumTypeName, depth: 1),
-            FieldNoteHtml(ff.Note, ff.FlagBits, ff.EnumValues)
+            FieldTypeCellHtml(
+              ff.Type,
+              ff.BitfieldTypeName,
+              ff.EnumTypeName,
+              ff.FlagBits,
+              ff.EnumValues
+            ),
+            FieldPlainNoteHtml(ff.Note)
           )
         );
       }
@@ -549,8 +591,14 @@ public static class HtmlExporter
             new GroupStaticRowVm(
               $"static 0x{addr:X}",
               sf.Name,
-              FieldTypeHtml(sf.Type, sf.BitfieldTypeName, sf.EnumTypeName, depth: 1),
-              FieldNoteHtml(sf.Note, sf.FlagBits, sf.EnumValues),
+              FieldTypeCellHtml(
+                sf.Type,
+                sf.BitfieldTypeName,
+                sf.EnumTypeName,
+                sf.FlagBits,
+                sf.EnumValues
+              ),
+              FieldPlainNoteHtml(sf.Note),
               Snap(staticSnapshots, g.Key, sf.Name)
             )
           );
@@ -593,11 +641,22 @@ public static class HtmlExporter
     return $"<details class=\"note-spoiler\"><summary>{n} lines</summary><div class=\"note-spoiler-body prov\">{enc}</div></details>";
   }
 
-  private static string FieldNoteHtml(
-    string? note,
+  private static string FieldPlainNoteHtml(string? note) =>
+    HtmlTemplates.RenderFieldNote(BuildFieldNoteVm(note, null, null));
+
+  private static string FieldTypeCellHtml(
+    TypeExpr type,
+    string? bitfieldTypeName,
+    string? enumTypeName,
     IReadOnlyList<FlagBitDecl>? bits,
-    IReadOnlyList<EnumValueDecl>? enumVals
-  ) => HtmlTemplates.RenderFieldNote(BuildFieldNoteVm(note, bits, enumVals));
+    IReadOnlyList<EnumValueDecl>? enumVals,
+    int depth = 1
+  )
+  {
+    var core = FieldTypeHtml(type, bitfieldTypeName, enumTypeName, depth);
+    var extras = HtmlTemplates.RenderFieldTypeExtras(BuildFieldNoteVm(null, bits, enumVals));
+    return string.IsNullOrEmpty(extras) ? core : core + extras;
+  }
 
   private static FieldNoteVm BuildFieldNoteVm(
     string? note,
@@ -607,10 +666,7 @@ public static class HtmlExporter
   {
     var hasNote = !string.IsNullOrEmpty(note);
     var fb = bits is { Count: > 0 }
-      ? bits
-        .OrderBy(x => x.Bit)
-        .Select(x => new FlagBitVm(x.Bit, x.Name, x.Description))
-        .ToList()
+      ? bits.OrderBy(x => x.Bit).Select(x => new FlagBitVm(x.Bit, x.Name, x.Description)).ToList()
       : (IReadOnlyList<FlagBitVm>)Array.Empty<FlagBitVm>();
     var ev = enumVals is { Count: > 0 }
       ? enumVals
@@ -752,3 +808,4 @@ public static class HtmlExporter
     );
   }
 }
+

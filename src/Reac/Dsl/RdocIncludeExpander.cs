@@ -16,7 +16,9 @@ public static class RdocIncludeExpander
 
   /// <param name="entryFullPath">Absolute path to the entry <c>.rdoc</c> file.</param>
   /// <returns>Expanded text and ordered list of included file paths (each path when first included via <c>#include</c>).</returns>
-  public static (string ExpandedText, IReadOnlyList<string> IncludedSourcePaths) Expand(string entryFullPath)
+  public static (string ExpandedText, IReadOnlyList<string> IncludedSourcePaths) Expand(
+    string entryFullPath
+  )
   {
     var full = Path.GetFullPath(entryFullPath);
     if (!File.Exists(full))
@@ -95,3 +97,4 @@ public static class RdocIncludeExpander
     return lines;
   }
 }
+

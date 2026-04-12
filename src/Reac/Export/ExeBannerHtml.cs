@@ -44,3 +44,4 @@ internal static class ExeBannerHtml
     return string.Join("\n", lines);
   }
 }
+

@@ -71,7 +71,11 @@ public static class ReDocumentParser
   }
 
   /// <summary>Reads one line of <c>@source</c>/<c>@summary</c>/<c>@note("...")</c> before <c>class</c>/<c>struct</c>.</summary>
-  private static bool TryConsumeLeadingTypeDecoratorLine(string text, ref int i, out ReBodyLine line)
+  private static bool TryConsumeLeadingTypeDecoratorLine(
+    string text,
+    ref int i,
+    out ReBodyLine line
+  )
   {
     line = null!;
     var saved = i;
@@ -655,7 +659,12 @@ public static class ReDocumentParser
     return $"{quotedNote} {slashNote}";
   }
 
-  private static bool TryPeekNextWorkLine(string body, int fromIndex, out string workLine, out int afterLine)
+  private static bool TryPeekNextWorkLine(
+    string body,
+    int fromIndex,
+    out string workLine,
+    out int afterLine
+  )
   {
     var i = fromIndex;
     while (true)
@@ -1013,14 +1022,7 @@ public static class ReDocumentParser
         // try instance field
       }
 
-      if (
-        TryParseStaticFieldLineRegex(
-          workLine,
-          out var stAddr,
-          out var stName,
-          out var stTyp
-        )
-      )
+      if (TryParseStaticFieldLineRegex(workLine, out var stAddr, out var stName, out var stTyp))
       {
         var stSplit = FieldTypeNoteSplitter.Split(StripLineComment(stTyp));
         lines.Add(
@@ -1124,11 +1126,7 @@ public static class ReDocumentParser
     var i = braceIdx;
     var inner = ParseBlock(body, ref i);
     var (bits, sources, summary, blockNote) = ParseBitfieldInnerLines(inner);
-    var offset = int.Parse(
-      m.Groups[1].Value,
-      NumberStyles.HexNumber,
-      CultureInfo.InvariantCulture
-    );
+    var offset = int.Parse(m.Groups[1].Value, NumberStyles.HexNumber, CultureInfo.InvariantCulture);
     var fieldName = m.Groups[2].Value;
     var storage = m.Groups[3].Value;
     line = new ReBodyLine.InlineBitfieldFieldLine(
@@ -1221,10 +1219,7 @@ public static class ReDocumentParser
     if (i >= work.Length || !(char.IsLetter(work[i]) || work[i] == '_'))
       return false;
     i++;
-    while (
-      i < work.Length
-      && (char.IsLetterOrDigit(work[i]) || work[i] == '_' || work[i] == '.')
-    )
+    while (i < work.Length && (char.IsLetterOrDigit(work[i]) || work[i] == '_' || work[i] == '.'))
       i++;
     var name = work.Substring(nameStart, i - nameStart);
     if (name.Length == 0)
@@ -1346,3 +1341,4 @@ public static class ReDocumentParser
     return line.Substring(i, j - i);
   }
 }
+

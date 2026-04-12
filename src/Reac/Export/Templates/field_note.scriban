@@ -8,39 +8,3 @@
 {{ Note | html.escape }}
 {{ end }}
 {{ end }}
-{{ if HasBits }}
-{{ if UseBitsSpoiler }}
-<details class="note-spoiler">
-<summary>{{ BitsCount }} bits</summary>
-<ul class="prov">
-{{ for b in FlagBits }}
-<li>bit {{ b.Bit }}: {{ b.Name | html.escape }}{{ if b.Description }} — {{ b.Description | html.escape }}{{ end }}</li>
-{{ end }}
-</ul>
-</details>
-{{ else }}
-<ul class="prov">
-{{ for b in FlagBits }}
-<li>bit {{ b.Bit }}: {{ b.Name | html.escape }}{{ if b.Description }} — {{ b.Description | html.escape }}{{ end }}</li>
-{{ end }}
-</ul>
-{{ end }}
-{{ end }}
-{{ if HasEnums }}
-{{ if UseEnumsSpoiler }}
-<details class="note-spoiler">
-<summary>{{ EnumsCount }} enumerators</summary>
-<ul class="prov">
-{{ for ev in EnumValues }}
-<li>{{ ev.Value }}: {{ ev.Name | html.escape }}{{ if ev.Description }} — {{ ev.Description | html.escape }}{{ end }}</li>
-{{ end }}
-</ul>
-</details>
-{{ else }}
-<ul class="prov">
-{{ for ev in EnumValues }}
-<li>{{ ev.Value }}: {{ ev.Name | html.escape }}{{ if ev.Description }} — {{ ev.Description | html.escape }}{{ end }}</li>
-{{ end }}
-</ul>
-{{ end }}
-{{ end }}

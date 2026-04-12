@@ -128,8 +128,7 @@ public static class ProjectValidator
               new ValidationIssue
               {
                 IsError = true,
-                Message =
-                  $"Type '{t.Name}': duplicate static address 0x{sa:X} in own fields",
+                Message = $"Type '{t.Name}': duplicate static address 0x{sa:X} in own fields",
               }
             );
         }
@@ -331,3 +330,4 @@ public static class ProjectValidator
     }
   }
 }
+

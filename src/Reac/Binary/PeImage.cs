@@ -85,3 +85,4 @@ internal static class PeImage
     return false;
   }
 }
+

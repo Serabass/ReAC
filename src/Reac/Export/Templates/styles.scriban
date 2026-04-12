@@ -105,6 +105,8 @@ details.note-spoiler { margin: 0.35rem 0; border: 1px solid var(--reac-border-so
 details.note-spoiler summary { cursor: pointer; font-weight: 600; font-size: 0.88rem; }
 p.note-spoiler-body, div.note-spoiler-body { white-space: pre-wrap; margin: 0.35rem 0 0; }
 td details.note-spoiler { margin: 0; }
+.field-type-extras { display: block; margin-top: 0.35rem; }
+td .field-type-extras { max-width: min(56ch, 100%); }
 @media (max-width: 800px) {
   .layout { flex-direction: column; }
   nav.sidebar { width: 100%; position: relative; max-height: none; border-right: none; border-bottom: 1px solid var(--reac-border-soft); }

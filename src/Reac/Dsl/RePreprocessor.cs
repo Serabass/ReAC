@@ -94,7 +94,7 @@ public static class RePreprocessor
     var names = defines.Keys.OrderByDescending(k => k.Length).ToList();
     var sb = new StringBuilder();
     var inString = false;
-    for (var i = 0; i < text.Length;)
+    for (var i = 0; i < text.Length; )
     {
       var c = text[i];
       if (c == '"')

@@ -65,11 +65,7 @@ public static class TypeExprParser
     var m = Regex.Match(s, @"\[(\d+)\]$");
     if (!m.Success)
       return false;
-    length = int.Parse(
-      m.Groups[1].Value,
-      NumberStyles.Integer,
-      CultureInfo.InvariantCulture
-    );
+    length = int.Parse(m.Groups[1].Value, NumberStyles.Integer, CultureInfo.InvariantCulture);
     inner = s[..m.Index];
     return true;
   }
@@ -125,8 +121,7 @@ public static class TypeExprParser
     var depthParen = 0;
     for (var i = 0; i <= inside.Length; i++)
     {
-      if (i == inside.Length
-        || (inside[i] == ',' && depthAngle == 0 && depthParen == 0))
+      if (i == inside.Length || (inside[i] == ',' && depthAngle == 0 && depthParen == 0))
       {
         var chunk = inside.Substring(start, i - start).Trim();
         if (chunk.Length > 0)
@@ -149,3 +144,4 @@ public static class TypeExprParser
     return parts;
   }
 }
+

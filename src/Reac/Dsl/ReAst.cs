@@ -98,3 +98,4 @@ public abstract record ReBodyLine
   /// <summary>Expected SHA-256 of the exe file (64 hex digits; optional 0x prefix; case-insensitive).</summary>
   public sealed record Sha256ExpectedLine(string Hex) : ReBodyLine;
 }
+

@@ -67,10 +67,7 @@ public static class FormatConfigLoader
       if (sort.TryGetValue("functions", out var sfn))
         o = o with { SortFunctions = ParseSortAddressName(sfn?.ToString(), "sort.functions") };
       if (sort.TryGetValue("bitfield_bits", out var sbb))
-        o = o with
-        {
-          SortBitfieldBits = ParseSortValueName(sbb?.ToString(), "sort.bitfield_bits"),
-        };
+        o = o with { SortBitfieldBits = ParseSortValueName(sbb?.ToString(), "sort.bitfield_bits") };
       if (sort.TryGetValue("enum_values", out var sev))
         o = o with { SortEnumValues = ParseSortValueName(sev?.ToString(), "sort.enum_values") };
     }
@@ -84,10 +81,9 @@ public static class FormatConfigLoader
       null or "" or "preserve" => LineSortMode.Preserve,
       "offset" => LineSortMode.ByNumeric,
       "name" => LineSortMode.ByName,
-      _ =>
-        throw new InvalidOperationException(
-          $"{key} must be \"preserve\", \"offset\", or \"name\""
-        ),
+      _ => throw new InvalidOperationException(
+        $"{key} must be \"preserve\", \"offset\", or \"name\""
+      ),
     };
 
   private static LineSortMode ParseSortAddressName(string? s, string key) =>
@@ -96,10 +92,9 @@ public static class FormatConfigLoader
       null or "" or "preserve" => LineSortMode.Preserve,
       "address" => LineSortMode.ByNumeric,
       "name" => LineSortMode.ByName,
-      _ =>
-        throw new InvalidOperationException(
-          $"{key} must be \"preserve\", \"address\", or \"name\""
-        ),
+      _ => throw new InvalidOperationException(
+        $"{key} must be \"preserve\", \"address\", or \"name\""
+      ),
     };
 
   private static LineSortMode ParseSortValueName(string? s, string key) =>
@@ -108,10 +103,9 @@ public static class FormatConfigLoader
       null or "" or "preserve" => LineSortMode.Preserve,
       "value" => LineSortMode.ByNumeric,
       "name" => LineSortMode.ByName,
-      _ =>
-        throw new InvalidOperationException(
-          $"{key} must be \"preserve\", \"value\", or \"name\""
-        ),
+      _ => throw new InvalidOperationException(
+        $"{key} must be \"preserve\", \"value\", or \"name\""
+      ),
     };
 
   /// <param name="explicitPath">If set, this file must exist.</param>
@@ -171,3 +165,4 @@ public static class FormatConfigLoader
     return v.ToString();
   }
 }
+

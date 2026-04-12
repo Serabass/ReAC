@@ -104,7 +104,11 @@ internal static class Program
       Environment.Exit(1);
   }
 
-  private static void ExportHtmlHandler(DirectoryInfo? projectOpt, DirectoryInfo? outOpt, bool liveReload)
+  private static void ExportHtmlHandler(
+    DirectoryInfo? projectOpt,
+    DirectoryInfo? outOpt,
+    bool liveReload
+  )
   {
     var root = ResolveRoot(projectOpt);
     var ir = ProjectLoader.Load(root);
@@ -114,7 +118,11 @@ internal static class Program
     Console.WriteLine($"HTML written to {outPath}");
   }
 
-  private static async Task BuildHandler(DirectoryInfo? projectOpt, DirectoryInfo? outOpt, bool liveReload)
+  private static async Task BuildHandler(
+    DirectoryInfo? projectOpt,
+    DirectoryInfo? outOpt,
+    bool liveReload
+  )
   {
     var root = ResolveRoot(projectOpt);
     var ir = ProjectLoader.Load(root);
@@ -201,3 +209,4 @@ internal static class Program
     return 4;
   }
 }
+
