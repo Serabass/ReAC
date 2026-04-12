@@ -1,7 +1,6 @@
 @source("https://gtamods.com/wiki/Memory_Addresses_(VC)#CPed")
 class CPed : CPhysical {
   module Core.Main
-  static 0x0094AD28 Player : CPed* "Singleton / global; points to the active player (instance of CPed)."
 
   @note("Sets ammo for a weapon slot (sample).")
   0x004FF780 SetAmmo(eWeaponType, uint) : void
@@ -9,6 +8,7 @@ class CPed : CPhysical {
 
   0x141 fastShoot            : bool
   0x14C shootingAnim         : byte
+  0x244 currentStatus        : PedStatus
   0x354 health               : float "Current health; game scripts or natives may write this field."
   0x358 armor                : float "Armor value; document script bindings in your own notes if needed."
   0x3A8 lastVehicle          : CVehicle*
@@ -28,4 +28,12 @@ enum ePedType : byte {
   0x000 PLAYER1 "Primary player definition"
   0x001 PLAYER2 "Secondary player definition"
   0x006 COP     "Cop"
+}
+
+@source("https://gtamods.com/wiki/Memory_Addresses_(VC)#CPed")
+@summary("Ped status enum")
+enum PedStatus : byte {
+  0x001 ON_FOOT "On foot"
+  0x007 WALKING "Walking"
+  0x00C FP_AIMING "First person aiming"
 }
