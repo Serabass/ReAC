@@ -485,3 +485,4 @@ public class ParseReTests
     Assert.Equal((0, "a", "alpha"), bf.Bits[0]);
   }
 }
+

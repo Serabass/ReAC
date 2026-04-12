@@ -9,8 +9,7 @@ public class PreprocessorTests
   {
     var raw = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
     {
-      ["a.re"] =
-        """
+      ["a.re"] = """
         #define ADDR 0x42
 
         #ifdef VC
@@ -35,8 +34,7 @@ public class PreprocessorTests
   {
     var raw = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
     {
-      ["x.re"] =
-        """
+      ["x.re"] = """
         #ifdef MISSING
         class Gone { module M 0x0 a : uint32 }
         #endif

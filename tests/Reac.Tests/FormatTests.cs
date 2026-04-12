@@ -44,14 +44,8 @@ public class FormatTests
   [Fact]
   public void Hex_UpperCase_And_PadAddresses()
   {
-    var tops = ReDocumentParser.ParseDocument(
-      "class X {\n  static 0x1234ab p : byte\n}\n"
-    );
-    var o = FormatOptions.Default with
-    {
-      DigitsUpperCase = true,
-      PadAddresses = 8,
-    };
+    var tops = ReDocumentParser.ParseDocument("class X {\n  static 0x1234ab p : byte\n}\n");
+    var o = FormatOptions.Default with { DigitsUpperCase = true, PadAddresses = 8 };
     var s = ReDocumentFormatter.FormatDocument(tops, o);
     Assert.Contains("0x001234AB", s);
   }
@@ -69,7 +63,10 @@ public class FormatTests
     );
     var o = FormatOptions.Default with { SortFields = LineSortMode.ByName };
     var formatted = ReDocumentFormatter.FormatDocument(tops, o);
-    Assert.True(formatted.IndexOf("aa :", StringComparison.Ordinal) < formatted.IndexOf("bb :", StringComparison.Ordinal));
+    Assert.True(
+      formatted.IndexOf("aa :", StringComparison.Ordinal)
+        < formatted.IndexOf("bb :", StringComparison.Ordinal)
+    );
   }
 
   [Fact]
@@ -85,7 +82,10 @@ public class FormatTests
     );
     var o = FormatOptions.Default with { SortStaticFields = LineSortMode.ByNumeric };
     var formatted = ReDocumentFormatter.FormatDocument(tops, o);
-    Assert.True(formatted.IndexOf("a :", StringComparison.Ordinal) < formatted.IndexOf("b :", StringComparison.Ordinal));
+    Assert.True(
+      formatted.IndexOf("a :", StringComparison.Ordinal)
+        < formatted.IndexOf("b :", StringComparison.Ordinal)
+    );
   }
 
   [Fact]
@@ -102,7 +102,8 @@ public class FormatTests
     var o = FormatOptions.Default with { SortBitfieldBits = LineSortMode.ByNumeric };
     var formatted = ReDocumentFormatter.FormatDocument(tops, o);
     Assert.True(
-      formatted.IndexOf("0x000", StringComparison.Ordinal) < formatted.IndexOf("0x001", StringComparison.Ordinal)
+      formatted.IndexOf("0x000", StringComparison.Ordinal)
+        < formatted.IndexOf("0x001", StringComparison.Ordinal)
     );
   }
 

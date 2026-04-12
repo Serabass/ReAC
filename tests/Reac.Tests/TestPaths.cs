@@ -19,3 +19,4 @@ internal static class TestPaths
     throw new InvalidOperationException("Could not locate repo root (Reac.sln + project.toml).");
   }
 }
+

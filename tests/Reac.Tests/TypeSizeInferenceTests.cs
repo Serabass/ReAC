@@ -52,3 +52,4 @@ public class TypeSizeInferenceTests
     Assert.Equal(24, bb.Size);
   }
 }
+
