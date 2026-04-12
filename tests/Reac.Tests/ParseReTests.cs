@@ -208,10 +208,7 @@ public class ParseReTests
     var bf = Assert.IsType<ReTopLevel.BitfieldDef>(doc[0]);
     Assert.Equal("MyFlags", bf.Name);
     Assert.Equal("byte", bf.StorageName);
-    Assert.Equal(
-      new (int, string, string?)[] { (0, "a", null), (1, "b", null) },
-      bf.Bits
-    );
+    Assert.Equal(new (int, string, string?)[] { (0, "a", null), (1, "b", null) }, bf.Bits);
     var td = Assert.IsType<ReTopLevel.TypeDef>(doc[1]);
     var fl = Assert.Single(td.Body.OfType<ReBodyLine.FieldLine>());
     Assert.IsType<TypeExpr.Named>(fl.Type);
@@ -470,10 +467,7 @@ public class ParseReTests
     var ex = Assert.Single(m.Body.OfType<ReBodyLine.ExePathLine>());
     var sh = Assert.Single(m.Body.OfType<ReBodyLine.Sha256ExpectedLine>());
     Assert.Equal("re/modules/a.exe", ex.Path);
-    Assert.Equal(
-      "aeb2f22fe76209064ee5288da1892d0583cb17ed4fddad4bb624381ef3dc2346",
-      sh.Hex
-    );
+    Assert.Equal("aeb2f22fe76209064ee5288da1892d0583cb17ed4fddad4bb624381ef3dc2346", sh.Hex);
   }
 
   [Fact]
