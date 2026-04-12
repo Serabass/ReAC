@@ -5,6 +5,8 @@ enum IDE : byte {
   4 ARMY "Army Skin"
 
   156 POLICE_CAR "FBI Rancher"
+  157 VICECHEE1 "Vice cheetah 1"
+  236 VICECHEE2 "Vice cheetah 2"
   162 RHINO "Rhino Tank"
   163 BARRACKS "Barracks"
   220 FBI_RANCHER "FBI Rancher"
