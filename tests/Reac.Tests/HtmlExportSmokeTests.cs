@@ -64,6 +64,12 @@ public class HtmlExportSmokeTests
       var enumHtml = File.ReadAllText(en);
       Assert.Contains("pistol", enumHtml, StringComparison.Ordinal);
       Assert.Contains("Standard sidearm", enumHtml, StringComparison.Ordinal);
+
+      var sandbox = Path.Combine(outDir, "type", "Sandbox.html");
+      Assert.True(File.Exists(sandbox));
+      var sandboxHtml = File.ReadAllText(sandbox);
+      Assert.Contains("ntstr", sandboxHtml, StringComparison.Ordinal);
+      Assert.Contains("particle", sandboxHtml, StringComparison.OrdinalIgnoreCase);
     }
     finally
     {

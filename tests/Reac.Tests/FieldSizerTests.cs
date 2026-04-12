@@ -28,6 +28,7 @@ public class FieldSizerTests
   {
     Assert.Equal(31, FieldSizer.MaxBitIndexForScalarStorage("pointer", 4));
     Assert.Equal(63, FieldSizer.MaxBitIndexForScalarStorage("pointer", 8));
+    Assert.Equal(31, FieldSizer.MaxBitIndexForScalarStorage("ntstr", 4));
   }
 
   [Fact]

@@ -25,6 +25,8 @@ public static class TypeExprParser
     "word",
     "char",
     "bool",
+    // Null-terminated string: pointer-sized VA to NTBS in the PE image (see StaticFieldSnapshotReader).
+    "ntstr",
   };
 
   public static TypeExpr Parse(string input)

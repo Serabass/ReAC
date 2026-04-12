@@ -79,7 +79,7 @@ public static class FieldSizer
     var n = name.ToLowerInvariant();
     return n switch
     {
-      "pointer" => pointerSize,
+      "pointer" or "ntstr" => pointerSize,
       "byte" or "uint8" or "char" or "bool" => 1,
       "uint16" or "word" => 2,
       "uint32" or "dword" or "int32" or "int" => 4,

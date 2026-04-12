@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Linq;
+using System.Text;
 using Reac.Binary;
 using Reac.Ir;
 using Reac.Layout;
@@ -73,6 +74,9 @@ internal static class StaticFieldSnapshotReader
     if (f.BitfieldTypeName != null && bitfieldMap.TryGetValue(f.BitfieldTypeName, out var bfDecl))
       return FormatScalar(span, FieldSizerCanonicalScalar(bfDecl.StorageName), pointerSize);
 
+    if (f.Type is TypeExpr.Scalar sNt && sNt.Name.Equals("ntstr", StringComparison.OrdinalIgnoreCase))
+      return FormatNtstrField(image, fileOff, pointerSize);
+
     return f.Type switch
     {
       TypeExpr.Scalar s => FormatScalar(span, s.Name, pointerSize),
@@ -139,6 +143,59 @@ internal static class StaticFieldSnapshotReader
       "pointer" => FormatPointer(span, pointerSize),
       _ => "—",
     };
+  }
+
+  /// <summary>
+  /// Prefer <c>char*</c> stored at the field: read pointer-sized VA, map to file, read NTBS.
+  /// If that fails or yields empty, treat the field offset as the start of an <strong>inline</strong> NTBS (e.g. static <c>char[]</c> / literal storage).
+  /// </summary>
+  private static string FormatNtstrField(byte[] image, int fileOff, int pointerSize)
+  {
+    if (fileOff < 0 || fileOff + pointerSize > image.Length)
+      return "(out of file range)";
+
+    if (pointerSize == 4)
+    {
+      var stringVa = BitConverter.ToUInt32(image.AsSpan(fileOff, 4));
+      if (stringVa != 0 && PeImage.TryVaToFileOffset(image, stringVa, out var strOff))
+      {
+        var viaPtr = ReadNullTerminatedStringForDisplay(image, strOff);
+        if (viaPtr != "\"\"")
+          return viaPtr;
+      }
+    }
+    else if (pointerSize == 8)
+    {
+      var stringVa = BitConverter.ToUInt64(image.AsSpan(fileOff, 8));
+      if (stringVa != 0 && PeImage.TryVaToFileOffset(image, stringVa, out var strOff))
+      {
+        var viaPtr = ReadNullTerminatedStringForDisplay(image, strOff);
+        if (viaPtr != "\"\"")
+          return viaPtr;
+      }
+    }
+
+    return ReadNullTerminatedStringForDisplay(image, fileOff);
+  }
+
+  /// <summary>ASCII / Latin-1 up to first 0 byte; shown in quotes for HTML snapshot column.</summary>
+  private static string ReadNullTerminatedStringForDisplay(byte[] image, int start)
+  {
+    const int maxLen = 4096;
+    var end = Math.Min(image.Length, start + maxLen);
+    var len = 0;
+    for (var i = start; i < end; i++)
+    {
+      if (image[i] == 0)
+        break;
+      len++;
+    }
+
+    if (len == 0)
+      return "\"\"";
+
+    var text = Encoding.ASCII.GetString(image, start, len);
+    return "\"" + text.Replace("\\", "\\\\").Replace("\"", "\\\"") + "\"";
   }
 }
 
