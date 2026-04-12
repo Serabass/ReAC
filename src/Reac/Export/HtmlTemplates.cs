@@ -2,18 +2,29 @@ using System.Collections;
 using System.Collections.Concurrent;
 using System.Reflection;
 using System.Text;
+using Reac.Ir;
 using Scriban;
 using Scriban.Runtime;
-using Reac.Ir;
 
 namespace Reac.Export;
 
 /// <summary>Embedded <see href="https://github.com/scriban/scriban">Scriban</see> templates for static HTML export.</summary>
 internal static class HtmlTemplates
 {
+  /// <summary>Non-empty line segments split by CR/LF (for spoiler threshold).</summary>
+  internal static int CountTextLines(string? s)
+  {
+    if (string.IsNullOrEmpty(s)) return 0;
+    return s.Split(new[] { '\r', '\n' }, StringSplitOptions.None).Length;
+  }
+
+  internal static bool UseLineSpoiler(string? s) => CountTextLines(s) > 3;
+
   private const string ResourcePrefix = "Reac.Export.Templates.";
 
-  private static readonly ConcurrentDictionary<string, Template> Cache = new(StringComparer.Ordinal);
+  private static readonly ConcurrentDictionary<string, Template> Cache = new(
+    StringComparer.Ordinal
+  );
 
   private static Template Load(string fileName)
   {
@@ -48,7 +59,9 @@ internal static class HtmlTemplates
   {
     var root = ToScribanValue(model);
     if (root is not Dictionary<string, object> dict)
-      throw new InvalidOperationException($"Expected root model to be a mapping, got {root?.GetType().FullName}");
+      throw new InvalidOperationException(
+        $"Expected root model to be a mapping, got {root?.GetType().FullName}"
+      );
     var so = new ScriptObject();
     foreach (var kv in dict)
       so[kv.Key] = kv.Value;
@@ -152,7 +165,8 @@ internal static class HtmlTemplates
     return t.Render(ctx);
   }
 
-  public static string RenderIndexMain() => Load("index_main.scriban").Render(new TemplateContext());
+  public static string RenderIndexMain() =>
+    Load("index_main.scriban").Render(new TemplateContext());
 
   public static string RenderTypeMain(TypePageMainVm m)
   {
@@ -194,15 +208,23 @@ internal static class HtmlTemplates
       .Bits.OrderBy(x => x.Bit)
       .Select(x => new BitRow(x.Bit, x.Name, x.Description ?? ""))
       .ToList();
+    var summary = b.Summary ?? "";
+    var note = b.Note ?? "";
     PushModelGlobalsDeep(
       ctx,
       new
       {
         name = b.Name,
         storage = b.StorageName,
-        summary = b.Summary ?? "",
-        note = b.Note ?? "",
+        summary,
+        note,
+        summaryUseSpoiler = UseLineSpoiler(summary),
+        summaryLineCount = CountTextLines(summary),
+        noteUseSpoiler = UseLineSpoiler(note),
+        noteLineCount = CountTextLines(note),
         bits,
+        useBitsTableSpoiler = bits.Count > 3,
+        bitsTableCount = bits.Count,
         provenance = provenanceHtml,
       }
     );
@@ -217,15 +239,23 @@ internal static class HtmlTemplates
       .Values.OrderBy(x => x.Value)
       .Select(x => new EnumRow(x.Value, x.Name, x.Description ?? ""))
       .ToList();
+    var summary = e.Summary ?? "";
+    var note = e.Note ?? "";
     PushModelGlobalsDeep(
       ctx,
       new
       {
         name = e.Name,
         storage = e.StorageName,
-        summary = e.Summary ?? "",
-        note = e.Note ?? "",
+        summary,
+        note,
+        summaryUseSpoiler = UseLineSpoiler(summary),
+        summaryLineCount = CountTextLines(summary),
+        noteUseSpoiler = UseLineSpoiler(note),
+        noteLineCount = CountTextLines(note),
         values,
+        useValuesSpoiler = values.Count > 3,
+        valueCount = values.Count,
         provenance = provenanceHtml,
       }
     );

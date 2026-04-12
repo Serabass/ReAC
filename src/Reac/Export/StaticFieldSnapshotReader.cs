@@ -41,7 +41,8 @@ internal static class StaticFieldSnapshotReader
     return map;
   }
 
-  public static string FieldKey(string declaringType, string fieldName) => $"{declaringType}::{fieldName}";
+  public static string FieldKey(string declaringType, string fieldName) =>
+    $"{declaringType}::{fieldName}";
 
   private static string? TryFormat(
     byte[] image,
@@ -69,10 +70,7 @@ internal static class StaticFieldSnapshotReader
     )
       return FormatEnumStorage(span, enDecl.StorageName, f.EnumValues);
 
-    if (
-      f.BitfieldTypeName != null
-      && bitfieldMap.TryGetValue(f.BitfieldTypeName, out var bfDecl)
-    )
+    if (f.BitfieldTypeName != null && bitfieldMap.TryGetValue(f.BitfieldTypeName, out var bfDecl))
       return FormatScalar(span, FieldSizerCanonicalScalar(bfDecl.StorageName), pointerSize);
 
     return f.Type switch
@@ -86,7 +84,9 @@ internal static class StaticFieldSnapshotReader
   private static string FieldSizerCanonicalScalar(string storageName)
   {
     var n = storageName.ToLowerInvariant();
-    return n is "uint8" or "bool" or "char" ? "byte" : n is "word" ? "uint16" : storageName;
+    return n is "uint8" or "bool" or "char" ? "byte"
+      : n is "word" ? "uint16"
+      : storageName;
   }
 
   private static string FormatPointer(ReadOnlySpan<byte> span, int pointerSize)
@@ -116,9 +116,7 @@ internal static class StaticFieldSnapshotReader
     };
 
     var match = values.FirstOrDefault(v => v.Value == raw);
-    return match != null
-      ? $"{match.Name} (0x{raw:X})"
-      : $"0x{raw:X} (unknown)";
+    return match != null ? $"{match.Name} (0x{raw:X})" : $"0x{raw:X} (unknown)";
   }
 
   private static string FormatScalar(ReadOnlySpan<byte> span, string scalarName, int pointerSize)
@@ -132,7 +130,9 @@ internal static class StaticFieldSnapshotReader
       "bool" => (span[0] != 0).ToString(CultureInfo.InvariantCulture),
       "uint16" or "word" => BitConverter.ToUInt16(span[..2]).ToString(CultureInfo.InvariantCulture),
       "int16" => BitConverter.ToInt16(span[..2]).ToString(CultureInfo.InvariantCulture),
-      "uint32" or "dword" => BitConverter.ToUInt32(span[..4]).ToString(CultureInfo.InvariantCulture),
+      "uint32" or "dword" => BitConverter
+        .ToUInt32(span[..4])
+        .ToString(CultureInfo.InvariantCulture),
       "int32" or "int" => BitConverter.ToInt32(span[..4]).ToString(CultureInfo.InvariantCulture),
       "uint64" => BitConverter.ToUInt64(span[..8]).ToString(CultureInfo.InvariantCulture),
       "int64" => BitConverter.ToInt64(span[..8]).ToString(CultureInfo.InvariantCulture),

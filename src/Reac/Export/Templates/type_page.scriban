@@ -47,7 +47,7 @@
 <h3>{{ sec.TypeName | html.escape }}</h3>
 <table><thead><tr><th>Address</th><th>Decorators</th><th>Name</th><th>Parameters</th><th>Returns</th><th>Note</th></tr></thead><tbody>
 {{ for fn in sec.Rows }}
-<tr><td>{{ fn.AddrHex }}</td><td class="prov">{{ fn.DecoratorsPlain | html.escape }}</td><td>{{ fn.NamePlain | html.escape }}</td><td>{{ fn.ParamsPlain | html.escape }}</td><td>{{ fn.ReturnPlain | html.escape }}</td><td class="prov">{{ fn.NotePlain | html.escape }}</td></tr>
+<tr><td>{{ fn.AddrHex }}</td><td class="prov">{{ fn.DecoratorsPlain | html.escape }}</td><td>{{ fn.NamePlain | html.escape }}</td><td>{{ fn.ParamsPlain | html.escape }}</td><td>{{ fn.ReturnPlain | html.escape }}</td><td class="prov">{{ fn.NoteCellHtml }}</td></tr>
 {{ end }}
 </tbody></table>
 {{ end }}

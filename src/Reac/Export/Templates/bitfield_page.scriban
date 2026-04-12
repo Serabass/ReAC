@@ -2,13 +2,38 @@
 <p class="breadcrumb"><a href="../index.html">Index</a></p>
 <h1>{{ name | html.escape }} <small>(bitfield)</small></h1>
 <p>Storage: <code>{{ storage | html.escape }}</code></p>
-{{ if summary }}<p class="prov">{{ summary | html.escape }}</p>{{ end }}
-{{ if note }}<p class="prov">{{ note | html.escape }}</p>{{ end }}
+{{ if summary }}
+{{ if summaryUseSpoiler }}
+<details class="note-spoiler">
+<summary>{{ summaryLineCount }} lines</summary>
+<p class="prov note-spoiler-body">{{ summary | html.escape }}</p>
+</details>
+{{ else }}
+<p class="prov">{{ summary | html.escape }}</p>
+{{ end }}
+{{ end }}
+{{ if note }}
+{{ if noteUseSpoiler }}
+<details class="note-spoiler">
+<summary>{{ noteLineCount }} lines</summary>
+<p class="prov note-spoiler-body">{{ note | html.escape }}</p>
+</details>
+{{ else }}
+<p class="prov">{{ note | html.escape }}</p>
+{{ end }}
+{{ end }}
 <h2>Bits</h2>
+{{ if useBitsTableSpoiler }}
+<details class="enum-values">
+<summary>{{ bitsTableCount }} bits</summary>
+{{ end }}
 <table><thead><tr><th>Bit</th><th>Name</th><th>Description</th></tr></thead><tbody>
 {{ for x in bits }}
 <tr><td>{{ x.bit }}</td><td>{{ x.name | html.escape }}</td><td class="prov">{{ x.description | html.escape }}</td></tr>
 {{ end }}
 </tbody></table>
+{{ if useBitsTableSpoiler }}
+</details>
+{{ end }}
 {{ provenance }}
 </div></main>

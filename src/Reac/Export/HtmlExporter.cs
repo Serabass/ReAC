@@ -477,7 +477,8 @@ public static class HtmlExporter
             fn.Parameters,
             retPlain,
             notePlain,
-            decPlain
+            decPlain,
+            FormatNativeFnNoteCell(notePlain)
           );
         })
         .ToList();
@@ -581,6 +582,17 @@ public static class HtmlExporter
     );
   }
 
+  private static string FormatNativeFnNoteCell(string notePlain)
+  {
+    if (string.IsNullOrEmpty(notePlain))
+      return "";
+    var enc = System.Net.WebUtility.HtmlEncode(notePlain);
+    if (!HtmlTemplates.UseLineSpoiler(notePlain))
+      return enc;
+    var n = HtmlTemplates.CountTextLines(notePlain);
+    return $"<details class=\"note-spoiler\"><summary>{n} lines</summary><div class=\"note-spoiler-body prov\">{enc}</div></details>";
+  }
+
   private static string FieldNoteHtml(
     string? note,
     IReadOnlyList<FlagBitDecl>? bits,
@@ -606,7 +618,22 @@ public static class HtmlExporter
         .Select(x => new EnumValVm(x.Value, x.Name, x.Description))
         .ToList()
       : (IReadOnlyList<EnumValVm>)Array.Empty<EnumValVm>();
-    return new FieldNoteVm(hasNote, note, fb.Count > 0, fb, ev.Count > 0, ev);
+    var nLines = HtmlTemplates.CountTextLines(note);
+    var useNoteSpoiler = hasNote && HtmlTemplates.UseLineSpoiler(note);
+    return new FieldNoteVm(
+      hasNote,
+      note,
+      fb.Count > 0,
+      fb,
+      ev.Count > 0,
+      ev,
+      useNoteSpoiler,
+      nLines,
+      fb.Count > 3,
+      fb.Count,
+      ev.Count > 3,
+      ev.Count
+    );
   }
 
   private static string FieldTypeHtml(

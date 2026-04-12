@@ -22,7 +22,11 @@ internal sealed record SidebarNavVm(
 
 internal sealed record ProvenanceUrlVm(string Url, bool IsHttp);
 
-internal sealed record ProvenanceTemplateVm(string FilePath, bool HasUrls, IReadOnlyList<ProvenanceUrlVm> SourceUrls);
+internal sealed record ProvenanceTemplateVm(
+  string FilePath,
+  bool HasUrls,
+  IReadOnlyList<ProvenanceUrlVm> SourceUrls
+);
 
 internal sealed record FieldNoteVm(
   bool HasNote,
@@ -30,7 +34,13 @@ internal sealed record FieldNoteVm(
   bool HasBits,
   IReadOnlyList<FlagBitVm> FlagBits,
   bool HasEnums,
-  IReadOnlyList<EnumValVm> EnumValues
+  IReadOnlyList<EnumValVm> EnumValues,
+  bool UseNoteSpoiler,
+  int NoteLineCount,
+  bool UseBitsSpoiler,
+  int BitsCount,
+  bool UseEnumsSpoiler,
+  int EnumsCount
 );
 
 internal sealed record FlagBitVm(int Bit, string Name, string? Description);
@@ -68,7 +78,9 @@ internal sealed record NativeFnRowVm(
   string ParamsPlain,
   string ReturnPlain,
   string NotePlain,
-  string DecoratorsPlain
+  string DecoratorsPlain,
+  /// <summary>HTML for the Note column (may include <c>details.note-spoiler</c>).</summary>
+  string NoteCellHtml
 );
 
 internal sealed record NativeFnSectionVm(string TypeName, IReadOnlyList<NativeFnRowVm> Rows);
